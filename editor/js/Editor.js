@@ -46,6 +46,7 @@ var Editor = function () {
 
 	this.selected = null;
 	this.helpers = {};
+	this.upDirection = 'z';
 
 };
 

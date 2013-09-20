@@ -24,12 +24,14 @@ var Viewport = function ( editor ) {
 	// helpers
 
 	var grid = new THREE.GridHelper( 500, 25 );
+    if (editor.upDirection == 'z') grid.rotation.x = Math.PI / 2;
 	sceneHelpers.add( grid );
 
 	//
 
 	var camera = new THREE.PerspectiveCamera( 50, container.dom.offsetWidth / container.dom.offsetHeight, 1, 5000 );
 	camera.position.set( 500, 250, 500 );
+	if (editor.upDirection == 'z') camera.up.set(0, 0, 1);
 	camera.lookAt( scene.position );
 
 	//

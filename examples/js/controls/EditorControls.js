@@ -69,11 +69,16 @@ THREE.EditorControls = function ( object, domElement ) {
 	this.rotate = function ( delta ) {
 
 		vector.copy( object.position ).sub( center );
+		if ( editor.upDirection == 'z' ) {
+			var theta = Math.atan2(vector.x, vector.y);
+			var phi = Math.atan2(Math.sqrt(vector.x * vector.x + vector.y * vector.y), vector.z);
+			theta -= delta.x;
+        } else {
+			var theta = Math.atan2(vector.x, vector.z);
+			var phi = Math.atan2(Math.sqrt(vector.x * vector.x + vector.z * vector.z), vector.y);
+			theta += delta.x;
+        }
 
-		var theta = Math.atan2( vector.x, vector.z );
-		var phi = Math.atan2( Math.sqrt( vector.x * vector.x + vector.z * vector.z ), vector.y );
-
-		theta += delta.x;
 		phi += delta.y;
 
 		var EPS = 0.000001;
@@ -83,8 +88,14 @@ THREE.EditorControls = function ( object, domElement ) {
 		var radius = vector.length();
 
 		vector.x = radius * Math.sin( phi ) * Math.sin( theta );
-		vector.y = radius * Math.cos( phi );
-		vector.z = radius * Math.sin( phi ) * Math.cos( theta );
+
+		if ( editor.upDirection == 'z' ) {
+			vector.z = radius * Math.cos(phi);
+			vector.y = radius * Math.sin(phi) * Math.cos(theta);
+		} else {
+			vector.y = radius * Math.cos(phi);
+			vector.z = radius * Math.sin(phi) * Math.cos(theta);
+	}
 
 		object.position.copy( center ).add( vector );
 
