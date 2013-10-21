@@ -94,6 +94,17 @@ var Viewport = function ( editor ) {
 
 	};
 
+	// Fire a ray from the given origin and direction and find if the passed object has
+	// an opposing face that intersects. This can be used to find centerpoints of cutouts
+	var getInnerFace = function (origin, direction, object) {
+		
+		ray.set(origin, direction);
+		return ray.intersectObject(object);
+
+	};
+
+
+
 	var onMouseDownPosition = new THREE.Vector2();
 	var onMouseUpPosition = new THREE.Vector2();
 
@@ -145,7 +156,6 @@ var Viewport = function ( editor ) {
 		return new CSG.Connector(p, a, n);
 	}
 
-
 	function investigateSelection(selection) {
 
 		// The intersected point on the clicked face
@@ -157,43 +167,84 @@ var Viewport = function ( editor ) {
 		// The face on the intersected object
 		var face = selected.geometry.faces[selection.intersect.faceIndex];
 
+		// World normal for clicked face
+		var worldNormal = worldNormalFrom(selected, face.normal.clone());
+
+		// Fire a ray from the clicked point, looking for an opposing face
+		var matched = getInnerFace(clicked, worldNormal.normalize(), selected);
+
+		var opposingFace = matched[0];
+
+		// Since the point of this functionality is to find the center point of a potential whole, 
+		// we should probably test the found object to ensure the two faces are parallel
+		if (opposingFace) {
+
+			var rayToTravel = new THREE.Ray(clicked, worldNormal.normalize());
+			var center = rayToTravel.at(opposingFace.distance / 2);
+
+			// Show helper
+			addRayHelper(center, camera.up, scene);
+
+			// Show line
+			var geometry = new THREE.Geometry();
+			geometry.vertices.push(clicked);
+			geometry.vertices.push(opposingFace.point);
+
+			var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5 }));
+			scene.add(line);
+
+		} else {
+
+			// Show helper
+			addRayHelper(selected.worldToLocal(selection.intersect.point), face.normal, selected);
+			//addRayHelper(clicked, worldNormal, scene);
+
+		}
+
+	}
+
+	// Convert from object local normal to world
+	function worldNormalFrom(object, normal) {
+
+		var normalMatrix = new THREE.Matrix3().getNormalMatrix(object.matrixWorld);
+		return normal.applyMatrix3(normalMatrix).normalize();
+
+	}
+
+	function addRayHelper(origin, direction, appendTo) {
+
+		var helper = new THREE.ArrowHelper(
+					direction,
+					origin,
+					20,
+					0x3333FF);
+
+		appendTo.add(helper);
+
+		return helper;
+
+	}
+
+	var moveObjectToContainer = function () {
+
 		// Determine in world space the difference from the selected object to the clicked point
 		var worldPosition = selected.localToWorld(selected.position.clone());
 		var offset = worldPosition.sub(clicked);
 
-		if (selected.parent.name == 'Positioner') {
-			selected.parent.position = offset;
-		} else {
-			// Create a new container object which we will move our target object into
-			var parent = new THREE.Object3D();
-			parent.name = 'Positioner';
-			parent.position = offset;
+		//if (selected.parent.name == 'Positioner') {
+		//	selected.parent.position = offset;
+		//} else {
+		//	// Create a new container object which we will move our target object into
+		//	var parent = new THREE.Object3D();
+		//	parent.name = 'Positioner';
+		//	parent.position = offset;
 
-			scene.add(parent);
+		//	scene.add(parent);
 
-			// Move the target object to the new container
-			parent.add(selected);
-			selected.position = new THREE.Vector3();
-		}
-
-		// Display a click helper to visualize the process {{
-		if (clickHelper)
-			clickHelper.parent.remove(clickHelper);
-		
-		// Convert the face normal to world cords to ensure arrow helper is correct on rotated objects
-		var normalMatrix = new THREE.Matrix3().getNormalMatrix(selected.matrixWorld);
-		var worldNormal = face.normal.clone().applyMatrix3(normalMatrix).normalize();
-
-		clickHelper = new THREE.ArrowHelper(
-				worldNormal,
-				new THREE.Vector3(),
-				20,
-				0x3333FF);
-
-		scene.add(clickHelper);
-
-		// Display a click helper to visualize the process }}
-
+		//	// Move the target object to the new container
+		//	parent.add(selected);
+		//	selected.position = new THREE.Vector3();
+		//}
 	}
 
 	var updateX = function () {
@@ -202,7 +253,6 @@ var Viewport = function ( editor ) {
 		var connectFrom = extractConnectorFromSelection(selection[1]);
 
 		//var connectFrom = new CSG.Connector(selection[1].intersect.point.toArray(), selection[1].face.normal.toArray(), [0, 1, 0] );
-
 
 		var matrix = connectFrom.getTransformationTo(
 		  connectTo,
