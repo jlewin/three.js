@@ -4,6 +4,7 @@
 		<title>three.js editor</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="icon" type="image/png" href="transform.png">
 	</head>
 	<body>
 		<link href="css/types.css" rel="stylesheet" />
@@ -29,6 +30,9 @@
 		<script src="../examples/js/exporters/OBJExporter.js"></script>
 		<script src="../examples/js/renderers/SoftwareRenderer.js"></script>
 		<script src="../examples/js/renderers/SVGRenderer.js"></script>
+
+
+		<script src="js/csg.js"></script>
 
 		<!-- WIP -->
 
@@ -185,6 +189,58 @@
 			window.addEventListener( 'resize', onWindowResize, false );
 
 			onWindowResize();
+
+
+			//var connects = {
+
+			//	geometry: new THREE.CubeGeometry(100, 100, 100),
+			//	material: new THREE.MeshLambertMaterial({ color: 0xff0000 }),
+			//	material2: new THREE.MeshLambertMaterial({ color: 0x00ff00 }),
+
+			//	init: function () {
+			//		this.cube1 = new THREE.Mesh(this.geometry, this.material);
+			//		this.cube2 = new THREE.Mesh(this.geometry, this.material2);
+			//	}
+			//};
+
+			//connects.init();
+
+			//connects.cube1.position.x = 50;
+			//connects.cube2.position.x = -300;
+
+			//var connectFrom = new CSG.Connector([10, 0, 0], [1, 0, 0], [0, 0, 1]);
+			//var connectTo = new CSG.Connector([0, -4, 0], [0, -1, 0], [0, 0, 1]);
+
+
+			//var m1 = new THREE.Matrix4();
+			//m1.makeRotationX(90 * Math.PI * (1.0 / 180.0));
+
+			//var m2 = CSG.Matrix4x4.rotationX(90);
+
+			//var matrix = connectFrom.getTransformationTo(
+			//  connectTo,
+			//  true,   // mirror 
+			//  0       // normalrotation
+			//);
+
+			//debugger;
+			//var x = matrix.elements;
+
+			//var mx = new THREE.Matrix4(x[0], x[4], x[8], x[12],
+			//						   x[1], x[5], x[9], x[13],
+			//						   x[2], x[6], x[10], x[14],
+			//				 		   x[3], x[7], x[11], x[15]);
+
+			////editor.scene.add(connects.cube1);
+			////editor.scene.add(connects.cube2);
+
+			////connects.cube2.applyMatrix(mx);
+
+			
+
+			//cube2 = cube2.transform(matrix);
+
+			//var result = cube2.union(cube1);
 
 		</script>
 	</body>

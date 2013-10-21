@@ -110,6 +110,118 @@ var Viewport = function ( editor ) {
 
 	};
 
+	var testing = 2;
+
+	var selection = [];
+
+	//var colorA = new THREE.Color(0xff0000);
+	//var colorB = new THREE.Color(0x00ff00);
+
+	//var f;
+	//f = selection[0][1];
+	////f.vertexColors.push(colorA, colorA, colorA);
+	//f.color.setRGB(255, 0, 0);
+
+	//f = selection[1][1];
+	////f.vertexColors.push(colorB, colorB, colorB);
+	//f.color.setRGB(0, 255, 0);
+
+	function extractConnectorFromSelection(selection) {
+
+		debugger;
+
+		var p = selection.intersect.point.toArray();
+		var a = selection.face.normal.toArray();
+		var n = selection.face.normal.toArray();
+
+		var matrix = new THREE.Matrix4();
+		matrix.extractRotation(selection.intersect.object.matrix);
+
+		var direction = new THREE.Vector3(0, 1, 0);
+		var xyz = matrix.multiplyVector3(direction);
+
+		n = direction.normalize();
+		
+		return new CSG.Connector(p, a, n);
+	}
+
+
+	function investigateSelection(selection) {
+
+		// The intersected point on the clicked face
+		var clicked = selection.intersect.point
+
+		// The intersected object
+		var selected = selection.intersect.object;
+
+		// The face on the intersected object
+		var face = selected.geometry.faces[selection.intersect.faceIndex];
+
+		// Determine in world space the difference from the selected object to the clicked point
+		var worldPosition = selected.localToWorld(selected.position.clone());
+		var offset = worldPosition.sub(clicked);
+
+		if (selected.parent.name == 'Positioner') {
+			selected.parent.position = offset;
+		} else {
+			// Create a new container object which we will move our target object into
+			var parent = new THREE.Object3D();
+			parent.name = 'Positioner';
+			parent.position = offset;
+
+			scene.add(parent);
+
+			// Move the target object to the new container
+			parent.add(selected);
+			selected.position = new THREE.Vector3();
+		}
+
+		// Display a click helper to visualize the process {{
+		if (clickHelper)
+			clickHelper.parent.remove(clickHelper);
+		
+		// Convert the face normal to world cords to ensure arrow helper is correct on rotated objects
+		var normalMatrix = new THREE.Matrix3().getNormalMatrix(selected.matrixWorld);
+		var worldNormal = face.normal.clone().applyMatrix3(normalMatrix).normalize();
+
+		clickHelper = new THREE.ArrowHelper(
+				worldNormal,
+				new THREE.Vector3(),
+				20,
+				0x3333FF);
+
+		scene.add(clickHelper);
+
+		// Display a click helper to visualize the process }}
+
+	}
+
+	var updateX = function () {
+
+		var connectTo = extractConnectorFromSelection(selection[0]);
+		var connectFrom = extractConnectorFromSelection(selection[1]);
+
+		//var connectFrom = new CSG.Connector(selection[1].intersect.point.toArray(), selection[1].face.normal.toArray(), [0, 1, 0] );
+
+
+		var matrix = connectFrom.getTransformationTo(
+		  connectTo,
+		  true,   // mirror 
+		  0       // normalrotation
+		);
+
+		// Remap to three.js matrix
+		var x = matrix.elements;
+		var mx = new THREE.Matrix4(x[0], x[4], x[8], x[12],
+								   x[1], x[5], x[9], x[13],
+								   x[2], x[6], x[10], x[14],
+						 		   x[3], x[7], x[11], x[15]);
+
+		selection[1].intersect.object.applyMatrix(mx);
+	}
+
+	var clickHelper;
+
 	var onMouseUp = function ( event ) {
 
 		var rect = container.dom.getBoundingClientRect();
@@ -120,10 +232,10 @@ var Viewport = function ( editor ) {
 		if ( onMouseDownPosition.distanceTo( onMouseUpPosition ) == 0 ) {
 
 			var intersects = getIntersects( event, objects );
-
 			if ( intersects.length > 0 ) {
 
 				var object = intersects[ 0 ].object;
+				var intersect = intersects[ 0 ];
 
 				if ( object.userData.object !== undefined ) {
 
@@ -133,7 +245,46 @@ var Viewport = function ( editor ) {
 
 				} else {
 
-					editor.select( object );
+					if (testing == 1) {
+
+						var face = object.geometry.faces[intersect.faceIndex];
+
+						if (selection.length >= 2) {
+
+							selection.forEach(function (s) {
+								object.removeChild(s.arrowHelper);
+							});
+
+							selection = [];
+						}
+
+
+						var arrow = new THREE.ArrowHelper(
+								face.normal,
+								face.centroid,
+								20,
+								0x3333FF);
+
+						object.add(arrow);
+
+						selection.push({ intersect: intersect, face: face, arrowHelper: arrow });
+
+						if (selection.length == 2) {
+							updateX();
+						}
+
+					} else if (testing == 2) {
+						selection = [];
+						
+						
+						selection.push({ intersect: intersect, face: face, arrowHelper: arrow });
+
+						investigateSelection(selection[0]);
+
+					}
+
+					else
+						editor.select(object);
 
 				}
 
