@@ -174,7 +174,7 @@ Editor.prototype = {
 		var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
 
 		return function ( object ) {
-
+			debugger;
 			if ( object instanceof THREE.Camera ) {
 
 				var picker = new THREE.Mesh( geometry, material );

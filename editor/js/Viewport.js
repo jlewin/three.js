@@ -162,17 +162,7 @@ var Viewport = function ( editor ) {
 
 		var opposingFace = matched[0];
 
-		var verts = selected.geometry.vertices;
-		var points = [verts[face.a], verts[face.b], verts[face.c]];
-
-		// Calculate normal from verts
-		// TODO: Create some UI elements to display and swap the selection
-		var directionFromFaceVerts = new THREE.Vector3().subVectors(points[0], points[2]);
-
-		// TODO: Create some UI to mirror the normal direction
-		directionFromFaceVerts.negate();
-
-		var worldDir = worldNormalFrom(selected, directionFromFaceVerts.normalize());
+		//var worldDir = worldNormalFrom(selected, directionFromFaceVerts.normalize());
 
 		// Since the point of this functionality is to find the center point of a potential whole, 
 		// we should probably test the found object to ensure the two faces are parallel
@@ -181,10 +171,6 @@ var Viewport = function ( editor ) {
 			var rayToTravel = new THREE.Ray(clicked, worldNormal.normalize());
 			var center = rayToTravel.at(opposingFace.distance / 2);
 
-			// Show helper
-			//addRayHelper(center, camera.up, scene);
-			addRayHelper(center, worldDir, scene);
-			
 			// Show line
 			var geometry = new THREE.Geometry();
 			geometry.vertices.push(clicked);
@@ -192,6 +178,37 @@ var Viewport = function ( editor ) {
 
 			var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5 }));
 			scene.add(line);
+
+			var verts = selected.geometry.vertices;
+			var points = [verts[face.a], verts[face.b], verts[face.c]];
+
+			var goodNormal;
+
+			// Try to calculate a normal from the points on the face that when fired from the centerpoint, does not hit the active object
+			for (var i = 1; i < 4; i++) {
+				var p = (i % 2 == 1) ? 0 : 1;
+
+				// Calculate normal from verts
+				var directionFromFaceVerts = new THREE.Vector3().subVectors(points[p], points[i]);
+				directionFromFaceVerts.normalize();
+
+				var matched = getInnerFace(center, directionFromFaceVerts, selected);
+				if (matched.length != 0)
+				{
+					// TODO: Create some UI to mirror the normal direction
+					directionFromFaceVerts.negate();
+					var matched = getInnerFace(center, directionFromFaceVerts, selected);
+				}
+
+				if (matched.length == 0) {
+					goodNormal = directionFromFaceVerts;
+					break;
+				}
+			}
+
+			// Show centerpoint helper
+			//addRayHelper(center, camera.up, scene);
+			addRayHelper(center, goodNormal, scene);
 
 		} else {
 
