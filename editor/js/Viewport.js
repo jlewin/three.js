@@ -103,8 +103,6 @@ var Viewport = function ( editor ) {
 
 	};
 
-
-
 	var onMouseDownPosition = new THREE.Vector2();
 	var onMouseUpPosition = new THREE.Vector2();
 
@@ -124,18 +122,6 @@ var Viewport = function ( editor ) {
 	var testing = 2;
 
 	var selection = [];
-
-	//var colorA = new THREE.Color(0xff0000);
-	//var colorB = new THREE.Color(0x00ff00);
-
-	//var f;
-	//f = selection[0][1];
-	////f.vertexColors.push(colorA, colorA, colorA);
-	//f.color.setRGB(255, 0, 0);
-
-	//f = selection[1][1];
-	////f.vertexColors.push(colorB, colorB, colorB);
-	//f.color.setRGB(0, 255, 0);
 
 	function extractConnectorFromSelection(selection) {
 
@@ -166,6 +152,7 @@ var Viewport = function ( editor ) {
 
 		// The face on the intersected object
 		var face = selected.geometry.faces[selection.intersect.faceIndex];
+		//face.color.setHex(0xff8000)
 
 		// World normal for clicked face
 		var worldNormal = worldNormalFrom(selected, face.normal.clone());
@@ -175,6 +162,18 @@ var Viewport = function ( editor ) {
 
 		var opposingFace = matched[0];
 
+		var verts = selected.geometry.vertices;
+		var points = [verts[face.a], verts[face.b], verts[face.c]];
+
+		// Calculate normal from verts
+		// TODO: Create some UI elements to display and swap the selection
+		var directionFromFaceVerts = new THREE.Vector3().subVectors(points[0], points[2]);
+
+		// TODO: Create some UI to mirror the normal direction
+		directionFromFaceVerts.negate();
+
+		var worldDir = worldNormalFrom(selected, directionFromFaceVerts.normalize());
+
 		// Since the point of this functionality is to find the center point of a potential whole, 
 		// we should probably test the found object to ensure the two faces are parallel
 		if (opposingFace) {
@@ -183,8 +182,9 @@ var Viewport = function ( editor ) {
 			var center = rayToTravel.at(opposingFace.distance / 2);
 
 			// Show helper
-			addRayHelper(center, camera.up, scene);
-
+			//addRayHelper(center, camera.up, scene);
+			addRayHelper(center, worldDir, scene);
+			
 			// Show line
 			var geometry = new THREE.Geometry();
 			geometry.vertices.push(clicked);
@@ -211,12 +211,12 @@ var Viewport = function ( editor ) {
 
 	}
 
-	function addRayHelper(origin, direction, appendTo) {
+	function addRayHelper(origin, direction, appendTo, length) {
 
 		var helper = new THREE.ArrowHelper(
 					direction,
 					origin,
-					20,
+					length || 20,
 					0x3333FF);
 
 		appendTo.add(helper);
