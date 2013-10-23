@@ -31,6 +31,10 @@
 				overflow: scroll;
 			}
 
+				#results .expected {
+					font-weight: bold;
+				}
+
 				#results td,
 				#results th {
 					font-size: xx-small;
@@ -79,6 +83,67 @@
 
 			}
 
+			function getProtoName(js) {
+
+				var protoAssign = /\.prototype\s*=\s*[^\n]*(THREE.[^)\n\s]*)/.exec(js);
+
+				if (!protoAssign) return null;
+
+				protoAssign = (protoAssign.length > 0) ? protoAssign[1] : null;
+
+				var segments = protoAssign.split('.');
+				return segments[1];
+
+			}
+
+			function compareTypes(instance, base) {
+
+				var local = [];
+				var remote = [];
+				var overridden = [];
+
+				for (var p in instance)
+				{
+					var baseVal = base[p];
+					var instVal = instance[p];
+
+					var baseType = typeof baseVal;
+					var instType = typeof instVal;
+
+					if (baseVal) {
+						console.log(baseType);
+						if (baseType == 'function' && !equals(instVal, baseVal, instType, baseType))
+							overridden.push(p);
+						else
+							remote.push(p);
+					} else {
+						local.push(p)
+					}
+				}
+
+				return { local: local, remote: remote, overridden: overridden };
+
+			}
+
+			function equals(dis, dat, typeA, typeB) {
+
+				if (typeA != typeB) return false;
+
+				
+				switch (typeA) {
+					case 'object':
+						if (Array.isArray(dis)) {
+							return JSON.stringify(dis) == JSON.stringify(dat);
+						} else {
+							return dis === dat; break;
+						}
+					case 'function':
+						return dis.toString() == dat.toString(); break;
+					default:
+						return dis == dat; break;
+				}
+			}
+
 			function showClickedItem(e) {
 
 				// Display the help docs
@@ -86,64 +151,29 @@
 
 				var name = e.srcElement.textContent;
 				var helpDoc = helpDocs[name];
+				var categorized;
 
 				var scriptUrl = '../' + helpDoc.Source[0].local;
 				var js = syncLoadScript(scriptUrl);
 
-				var protoAssign = /\.prototype\s*=\s*[^\n]*(THREE.[^)\n\s]*)/.exec(js);
+				var protoName = getProtoName(js);
 
-				protoAssign = (protoAssign.length > 0) ? protoAssign[1] : null;
-				
-				var segments = protoAssign.split('.');
-
-				if (typeof THREE == 'undefined') {
-					window.top['THREE'] = {};
-				}
-
-				var protoName = segments[1];
-
-				// Assuming only one level of nesting in THREE namespace
-				THREE[protoName] = function () { };
-				THREE[protoName].prototype = {};
-
-				// Now that the proto is in place, load the script
-				var dyn = document.createElement('script');
-				document.body.appendChild(dyn);
-				dyn.onload = function () {
-					debugger;
-					// Attempt to create object instance
-					var instance = typeMap.getInstance(name);
-
-					document.body.removeChild(dyn);
-
-					dyn = null;
-				};
-				dyn.src = scriptUrl;
-				
-				return;
-
-				// Store
-				var original = THREE.Object3D;
-				var proto = THREE.Object3D.prototype;
-
-				// Reset
-				THREE.Object3D = function () { };
-				THREE.Object3D.prototype = {};
-
-				var gah = THREE.LensFlare.prototype;
-
-				// Create object instance
 				var instance = typeMap.getInstance(name);
 
-				var table = validateDocs(name, instance, helpDoc);
+				var baseCall = /THREE\.([^\s]*)\.call/.exec(js);
 
+				var xxx = protoName == baseCall;
 
+				debugger;
 
+				if (protoName) {
+					// Compare the instance against its proto to decipher inheritance
+					categorized = compareTypes(instance, typeMap.getInstance(protoName))
+				} else {
+					categorized = inspectInstance(instance);
+				}
 
-				//// Restore
-				//THREE.Object3D = original;
-				//THREE.Object3D.prototype = proto;
-
+				var table = validateDocs(name, instance, helpDoc, categorized);
 
 				var elem = document.getElementById('results');
 				elem.innerHTML = '';
@@ -219,8 +249,27 @@
 
 				helpDocs = {};
 
-				collected.forEach(function (c) {
-					helpDocs[c.helpClassName] = c;
+				// Loop over all collected docs building out the helpDocs
+				// object for indexed lookup as well as populating the members
+				// property for the same reason
+				collected.forEach(function (doc) {
+
+					doc.members = {};
+
+					// Build members prop
+					[doc.Properties, doc.Methods].forEach(function (section) {
+
+						if (section && section.length > 0) {
+							for (var i in section) {
+								var item = section[i];
+								doc.members[item.name] = item;
+							}
+						}
+					});
+
+					// Assign doc
+					helpDocs[doc.helpClassName] = doc;
+
 				});
 
 			}
@@ -241,7 +290,6 @@
 			}
 
 			function loadPage(page) {
-				debugger;
 				//console.log('Loading ' + page[0]);
 				mash.src = page[1] + '.html';
 				imported++;

@@ -1,13 +1,17 @@
+var nameTest = /\.([^\($\s]*)/;
 
 function sanitize(name) {
-
-	return name.replace(/[\.\(\)]+/gi, '').trim();
+	var matches = name.match(nameTest);
+	return matches && matches.length == 2 ? matches[1] : name;
 
 }
 
 function processHelpPage(bodyElement) {
 
-	var info = { breadCrumb: bodyElement.firstChild.textContent.trim() };
+	var info = {
+		breadCrumb: bodyElement.firstChild.textContent.trim(),
+	};
+
 	var context = bodyElement.firstElementChild;
 	var state = 'loading';
 	var current = '';
@@ -40,10 +44,16 @@ function processHelpPage(bodyElement) {
 			case 'DIV':
 				var item = { name: current, val: context.innerHTML.trim() };
 				if (state != 'Constructor') {
-					var segments = item.name.split('::');
+
+					var name = sanitize(item.name);
+
+					var segments = name.split('::');
 					if (segments.length == 2) {
-						item.name = sanitize(segments[0]);
+						item.name = segments[0];
 						item.type = segments[1];
+					} else if (name != item.name) {
+						item.full = item.name;
+						item.name = name;
 					}
 				}
 

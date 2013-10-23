@@ -17,7 +17,10 @@ var ToSomeType;
 
 var TypeMapper2 = function(){
 
-	this['CameraHelper'] = 'new THREE.CameraHelper(new THREE.Camera)';
+	this['CameraHelper'] = 'new THREE.CameraHelper(new THREE.Camera())';
+	this['SpotLightHelper'] = 'new THREE.SpotLightHelper(new THREE.SpotLight())';
+	this['ShaderSprite'] = 'THREE.ShaderSprite';  // TODO: Object literal, can't use new, update docs
+	this['ShaderFlares'] = 'THREE.ShaderFlares';  // TODO: Object literal, can't use new, update docs
 
 };
 
@@ -29,7 +32,7 @@ TypeMapper2.prototype.getInstance = function (typeName) {
 
 	// If the type needs a custom constructor (i.e. it has some special requirements to create) use that override
 	if (this[typeName]) {
-		eval(this[typeName]);
+		return eval(this[typeName]);
 	} else {
 		// Otherwise just invoke the constructor function
 		return eval('new THREE.' + typeName);
@@ -40,23 +43,45 @@ TypeMapper2.prototype.getInstance = function (typeName) {
 var typeMap = new TypeMapper2();
 
 var columns = {
-	'Name': 0,
-	'Exists': 1,
-	'Documented': 2,
-	'CorrectType': 3,
-	'Abreviated': 4,
-	'Described': 5
+	Name: 0,
+	Documented: 1,
+	CorrectType: 2,
+	Help: 3,
+	Chars: 4,
+	TODO: 5,
+	length: 6
 };
 
-function validateDocs(className, instance) {
-
-	var helpDoc = helpDocs[className];
-
-	var properties = helpDoc.Properties;
-
-	var actualProps = inspectInstance(instance);
+function validateDocs(className, instance, helpDoc, members) {
 
 	var table = document.createElement('table');
+	var tr = createRow(table, 'th', columns.length);
+	var td;
+
+	// Display column headings
+	for (var v in columns) {
+
+		if (v == 'length') continue;
+
+		var i = columns[v];
+		tr.children[i].innerHTML = v;
+	}
+
+	createHeading('Members');
+	dumpMembers(members.local);
+
+	if (members.overridden.length > 0) {
+		createHeading('Overridden');
+		dumpMembers(members.overridden);
+	}
+
+	if (members.remote.length > 0) {
+
+		createHeading('Inherited');
+		dumpMembers(members.remote);
+	}
+
+	return table;
 
 	function createRow(table, tag, cellCount) {
 		var tr = document.createElement('tr');
@@ -69,98 +94,101 @@ function validateDocs(className, instance) {
 		return tr;
 	}
 
-	var tr = createRow(table, 'th', 6);
-	var td;
-
-	var columnCount = 0;
-
-	for (var v in columns) {
-		var i = columns[v];
-		tr.children[i].innerHTML = v;
-		columnCount++;
+	function createHeading(title) {
+		tr = createRow(table, 'th', 1);
+		td = tr.children[0];
+		td.setAttribute('colspan', columns.length);
+		td.innerHTML = title;
+		td.className = 'heading'
 	}
 
-	tr = createRow(table, 'th', 1);
-	td = tr.children[0];
-	td.setAttribute('colspan', 6);
-	td.innerHTML = 'Members';
-	td.className = 'heading'
+	function dumpMembers(items) {
 
-	// Loop over the props defined on the object
-	for (var v in actualProps) {
+		for (var i in items) {
 
-		if (v == 'inherited') continue;
+			var v = items[i];
 
-		tr = createRow(table, 'td', 6);
+			var tr = createRow(table, 'td', columns.length);
 
-		td = tr.children[columns.Name];
-		td.innerHTML = v;
+			td = tr.children[columns.Name];
+			td.innerHTML = v;
 
-		td = tr.children[columns.Exists];
-		td.className = 'true';
-		td.innerHTML = '1';
-	}
+			// TODO: Come up with some way to handle this...
+			if (v != 'constructor') {
 
+				var results = validateHelpDoc(instance, v, helpDoc.members[v]);
 
-	tr = createRow(table, 'th', 1);
-	td = tr.children[0];
-	td.setAttribute('colspan', 6);
-	td.innerHTML = 'Inherited';
-	td.className = 'heading'
+				if (results[columns['Documented']]) {
+					tr.className = 'expected';
+				}
 
-	for (var v in actualProps.inherited) {
+				for (var r in results) {
+					debugger;
+					var val = results[r];
 
-		tr = createRow(table, 'td', 6);
+					td = tr.children[r];
+					td.className = val;
+					td.innerHTML = val;
 
-		td = tr.children[columns.Name];
-		td.innerHTML = v;
-
-		td = tr.children[columns.Exists];
-		td.className = 'true';
-		td.innerHTML = '1';
-	}
-
-
-	// Loop over the properties defined in the docs 
-	for (var p in properties) {
-
-		hasExpectedProperty(instance, properties[p]);
+				}
+			}
+		}
 
 	}
-
-	return table;
-
 }
 
-//validateDocs('MeshBasicMaterial', obj);
+var todo = /TODO/ig;
 
-
-
-
-function hasExpectedProperty(instance, item) {
+// @item = HelpDoc property item
+function validateHelpDoc(instance, name, item) {
 
 	function setColumn(name, val) {
 		info[columns[name]] = val;
 	}
 
-	// Table 
-	// Name | Documented | Exists | Abreviated | Empty |
+	var info = [];
 
-	var info = [5];
+	var hasHelpDefinition = (item && item != null) ? true : false;
+	setColumn('Documented', hasHelpDefinition);
 
-	var itemInstance = instance[item.name];
+	// TODO: Consider... we could add a mechanism to lookup additional info on 
+	// types at this point to include in our populated results. For example,
+	// the ShaderSprite has a .sprite member which is an anonymous type and
+	// fall short in the docs. Providing a hook here would allow us to extract
+	// the type details for depiction in the docs or the docs test/helper suite
+	var itemInstance = instance[name];
+	var hasProp = itemInstance != null;
+
+	// Early exit due to dependence on help details below
+	if (!hasHelpDefinition) return info;
+
 	var actualType = typeof itemInstance;
 
 	// Sanitize type names from help docs into js base types
 	var expectedType = types[item.type] || item.type;
-
 	
-	var hasProp = itemInstance != null;
-
 	var correctType = expectedType == actualType;
 
 	var unableToValidate = false;
 
+	var length = item.val ? item.val.replace(todo, '').length : 0
+
+	setColumn('TODO', item.val.match(todo) != null)
+	setColumn('Chars', length);
+
+	var status;
+	if (length < 6) {
+		status = 'None';
+	} else if (length < 15) {
+		status = 'Abridged';
+	} else if (length < 30) {
+		status = 'Short';
+	} else {
+		status = 'ok';
+	}
+
+	setColumn('Help', status);
+	
 	if (!correctType && actualType == 'object') {
 		if (itemInstance == null || itemInstance == undefined) {
 			unableToValidate = correctType == true;
@@ -170,8 +198,6 @@ function hasExpectedProperty(instance, item) {
 		}
 	}
 
-	setColumn('Name', item.name);
-	setColumn('Exists', hasProp);
 	setColumn('CorrectType', unableToValidate ? 'Unknown' : correctType);
 
 	console.log((( hasProp && correctType ) ? '- Pass: ' : '- Fail: ') + item.name + ' : ' + actualType);
@@ -180,19 +206,23 @@ function hasExpectedProperty(instance, item) {
 		console.log('  - Missing ' + item.name);
 
 	if (!correctType)
-		console.log('  - Type mismatch: ' + item.type + ' != ' + actualType );
+		console.log('  - Type mismatch: ' + item.type + ' != ' + actualType);
+
+	return info;
 }
 
 function inspectInstance(obj) {
 	var info = {
-		inherited: {}
+		local: [],
+		remote: [],
+		overridden: []
 	};
 
 	for(var v in obj) { 
 		if (obj.hasOwnProperty(v))
-			info[v] = typeof obj[v];
-		//else
-		//	info.inherited[v] = typeof obj[v];
+			info.local.push(v);
+		else
+			info.remote.push(v); // = typeof obj[v];
 	}
 
 	return info;
