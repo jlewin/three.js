@@ -22,8 +22,8 @@ var onDocumentLoad = function ( event ) {
 
 	text = text.replace(/\[name\]/gi, name);
 	text = text.replace(/\[path\]/gi, path);
-	text = text.replace(/\[page:(\w+)\]/gi, "[page:$1 $1]" ); // [page:name] to [page:name title]
-	text = text.replace(/\[page:(\w+) ([\w|\.]+)\]/gi, "<a href=\"javascript:window.parent.goTo('$1')\" title=\"$1\">$2</a>" ); // [page:name title]
+	text = text.replace(/\[page:(\w+)\]/gi, "$1" ); // [page:name] to [page:name title]
+	text = text.replace(/\[page:(\w+) ([\w|\.]+)\]/gi, "$2::$1" ); // [page:name title]
 	text = text.replace(/\[link:([\w|\:|\/|\.|\-|\_]+)\]/gi, "[link:$1 $1]" ); // [link:url] to [link:url title]
 	text = text.replace(/\[link:([\w|\:|\/|\.|\-|\_|\(|\)]+) ([\w|\:|\/|\.|\-|\_ ]+)\]/gi, "<a href=\"$1\"  target=\"_blank\">$2</a>" ); // [link:url title]
 	text = text.replace(/\*([\w|\d|\"|\-|\(][\w|\d|\ |\-|\/|\+|\-|\(|\)|\=|\,|\.\"]*[\w|\d|\"|\)]|\w)\*/gi, "<strong>$1</strong>" ); // *
@@ -32,65 +32,65 @@ var onDocumentLoad = function ( event ) {
 
 	// handle code snippets formatting
 
-	var elements = document.getElementsByTagName( 'code' );
+	//var elements = document.getElementsByTagName( 'code' );
 
-	for ( var i = 0; i < elements.length; i ++ ) {
+	//for ( var i = 0; i < elements.length; i ++ ) {
 
-		var element = elements[ i ];
+	//	var element = elements[ i ];
 
-		text = element.textContent.trim();
-		text = text.replace( /^\t\t/gm, '' );
+	//	text = element.textContent.trim();
+	//	text = text.replace( /^\t\t/gm, '' );
 
-		element.textContent = text;
+	//	element.textContent = text;
 
-	}
+	//}
 
 	// Edit button
 
-	var button = document.createElement( 'div' );
-	button.id = 'button';
-	button.textContent = 'Edit this page';
+	//var button = document.createElement( 'div' );
+	//button.id = 'button';
+	//button.textContent = 'Edit this page';
 
-	button.addEventListener( 'click', function ( event ) {
+	//button.addEventListener( 'click', function ( event ) {
 
-		window.open( 'https://github.com/mrdoob/three.js/blob/dev/docs/' + section + '/' + path + '.html' );
+	//	window.open( 'https://github.com/mrdoob/three.js/blob/dev/docs/' + section + '/' + path + '.html' );
 
-	}, false );
+	//}, false );
 
-	document.body.appendChild( button );
+	//document.body.appendChild( button );
 
 	// Syntax highlighting
 
-	var styleBase = document.createElement( 'link' );
-	styleBase.href = '../../prettify/prettify.css';
-	styleBase.rel = 'stylesheet';
+	//var styleBase = document.createElement( 'link' );
+	//styleBase.href = '../../prettify/prettify.css';
+	//styleBase.rel = 'stylesheet';
 
-	var styleCustom = document.createElement( 'link' );
-	styleCustom.href = '../../prettify/threejs.css';
-	styleCustom.rel = 'stylesheet';
+	//var styleCustom = document.createElement( 'link' );
+	//styleCustom.href = '../../prettify/threejs.css';
+	//styleCustom.rel = 'stylesheet';
 
-	document.head.appendChild( styleBase );
-	document.head.appendChild( styleCustom );
+	//document.head.appendChild( styleBase );
+	//document.head.appendChild( styleCustom );
 
-	var prettify = document.createElement( 'script' );
-	prettify.src = '../../prettify/prettify.js';
+	//var prettify = document.createElement( 'script' );
+	//prettify.src = '../../prettify/prettify.js';
 
-	prettify.onload = function () {
+	//prettify.onload = function () {
 
-		var elements = document.getElementsByTagName( 'code' );
+	//	var elements = document.getElementsByTagName( 'code' );
 
-		for ( var i = 0; i < elements.length; i ++ ) {
+	//	for ( var i = 0; i < elements.length; i ++ ) {
 
-			var e = elements[ i ];
-			e.className += ' prettyprint';
+	//		var e = elements[ i ];
+	//		e.className += ' prettyprint';
 
-		}
+	//	}
 
-		prettyPrint();
+	//	prettyPrint();
 
-	}
+	//}
 
-	document.head.appendChild( prettify );
+	//document.head.appendChild( prettify );
 
 };
 

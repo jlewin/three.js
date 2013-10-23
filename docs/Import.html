@@ -1,0 +1,255 @@
+﻿<html>
+	<head>
+		<style type="text/css">
+			body {
+				font-family: sans-serif;
+			}
+			#allTypes {
+				margin: 0;
+				padding: 10px;
+				overflow: auto;
+			}
+
+				#allTypes li {
+					list-style: none;
+					margin: 2px;
+					display: inline-block;
+					background: #ddd;
+					border-radius: 3px 4px;
+					padding: 2px 5px;
+					font-size: xx-small;
+					cursor: pointer;
+				}
+
+			#results {
+				width: 400px;
+				height: 590px;
+				float: right;
+				background: #ccc;
+				border: solid 1px #ddd;
+				padding: 5px;
+				overflow: scroll;
+			}
+
+				#results td,
+				#results th {
+					font-size: xx-small;
+					text-align: left;
+				}
+
+				#results .heading {
+					border-bottom: solid 1px #F17777;
+					padding: 3px;
+				}
+
+		</style>
+	</head>
+	<body>
+		<script src="../build/three.js"></script>
+
+		<script src="ParseHelpDocs.js"></script>
+		<script src="list.js"></script>
+		<script src="TestHelpDocs.js"></script>
+
+		<script id="dyn"></script>
+
+		<iframe id="mash" style="width: 100%; height: 600px;"></iframe>
+
+		<div id="results"></div>
+
+		<ul id="allTypes"></ul>
+
+		<script>
+
+			var key = 'allTypes';
+			var types = [];
+			var activeItem;
+			var collected = [];
+			var helpDocs = {};
+			var imported = 0;
+			var MAX_IMPORT = 20;
+
+			var xhr = new XMLHttpRequest();
+
+			function syncLoadScript(path) {
+
+				xhr.open("GET", path, false);
+				xhr.send(null);
+				return xhr.responseText;
+
+			}
+
+			function showClickedItem(e) {
+
+				// Display the help docs
+				mash.src = e.srcElement.getAttribute('data-url');
+
+				var name = e.srcElement.textContent;
+				var helpDoc = helpDocs[name];
+
+				var scriptUrl = '../' + helpDoc.Source[0].local;
+				var js = syncLoadScript(scriptUrl);
+
+				var protoAssign = /\.prototype\s*=\s*[^\n]*(THREE.[^)\n\s]*)/.exec(js);
+
+				protoAssign = (protoAssign.length > 0) ? protoAssign[1] : null;
+				
+				var segments = protoAssign.split('.');
+
+				if (typeof THREE == 'undefined') {
+					window.top['THREE'] = {};
+				}
+
+				var protoName = segments[1];
+
+				// Assuming only one level of nesting in THREE namespace
+				THREE[protoName] = function () { };
+				THREE[protoName].prototype = {};
+
+				// Now that the proto is in place, load the script
+				var dyn = document.createElement('script');
+				document.body.appendChild(dyn);
+				dyn.onload = function () {
+					debugger;
+					// Attempt to create object instance
+					var instance = typeMap.getInstance(name);
+
+					document.body.removeChild(dyn);
+
+					dyn = null;
+				};
+				dyn.src = scriptUrl;
+				
+				return;
+
+				// Store
+				var original = THREE.Object3D;
+				var proto = THREE.Object3D.prototype;
+
+				// Reset
+				THREE.Object3D = function () { };
+				THREE.Object3D.prototype = {};
+
+				var gah = THREE.LensFlare.prototype;
+
+				// Create object instance
+				var instance = typeMap.getInstance(name);
+
+				var table = validateDocs(name, instance, helpDoc);
+
+
+
+
+				//// Restore
+				//THREE.Object3D = original;
+				//THREE.Object3D.prototype = proto;
+
+
+				var elem = document.getElementById('results');
+				elem.innerHTML = '';
+				elem.appendChild(table);
+
+			}
+
+			var ul = document.getElementById('allTypes');
+			ul.addEventListener('click', showClickedItem, false);
+
+			var mash = document.getElementById('mash');
+			mash.onload = function () {
+
+				//console.log('Loaded: ' + activeItem[1]);
+
+				var info = processHelpPage(mash.contentDocument.body);
+				info.helpClassName = activeItem[0];
+				info.helpUrl = activeItem[1] + '.html';
+
+				collected.push(info);
+
+				window.setTimeout(popLoadType, 500);
+
+			};
+
+
+			init();
+
+			function init() {
+
+				var json = window.localStorage[key];
+				if (!json) {
+
+					// Flatten the type info from the lists object into a hash of objectName -> path
+					for (var i in list.Reference) {
+
+						list.Reference[i].forEach(function (t) {
+
+							types.push(t);
+
+						});
+
+					}
+
+					// Start processing the queue
+					popLoadType();
+
+				} else {
+
+					collected = JSON.parse(json);
+					typesLoaded();
+
+				}
+
+			}
+
+			function typesLoaded() {
+
+				allTypes.innerHTML = '';
+
+				for (var v in collected) {
+
+					var item = collected[v];
+
+					var li = document.createElement('li');
+					li.innerHTML = item.helpClassName;
+					li.setAttribute('data-url', item.helpUrl);
+					allTypes.appendChild(li);
+				}
+
+				mash.style.width = 'calc(100% - 430px)';
+				mash.onload = null;
+
+				helpDocs = {};
+
+				collected.forEach(function (c) {
+					helpDocs[c.helpClassName] = c;
+				});
+
+			}
+
+			function popLoadType() {
+
+				activeItem = types.pop();
+
+				if (activeItem && imported < MAX_IMPORT) {
+
+					loadPage(activeItem);
+
+				} else {
+					window.localStorage[key] = JSON.stringify(collected);
+					typesLoaded();
+				}
+
+			}
+
+			function loadPage(page) {
+				debugger;
+				//console.log('Loading ' + page[0]);
+				mash.src = page[1] + '.html';
+				imported++;
+
+			}
+
+		</script>
+
+	</body>
+</html>
+
