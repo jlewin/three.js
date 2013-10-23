@@ -59,12 +59,12 @@ function validateDocs(className, instance, helpDoc, members) {
 	var td;
 
 	// Display column headings
-	for (var v in columns) {
+	for (var c in columns) {
 
-		if (v == 'length') continue;
+		if (c == 'length') continue;
 
-		var i = columns[v];
-		tr.children[i].innerHTML = v;
+		var i = columns[c];
+		tr.children[i].innerHTML = c;
 	}
 
 	createHeading('Members');
@@ -104,26 +104,26 @@ function validateDocs(className, instance, helpDoc, members) {
 
 	function dumpMembers(items) {
 
-		for (var i in items) {
+		for (var i = 0, length = items.length; i < length; i++) {
 
-			var v = items[i];
+			var p = items[i];
 
 			var tr = createRow(table, 'td', columns.length);
 
 			td = tr.children[columns.Name];
-			td.innerHTML = v;
+			td.innerHTML = p;
 
 			// TODO: Come up with some way to handle this...
-			if (v != 'constructor') {
+			if (p != 'constructor') {
 
-				var results = validateHelpDoc(instance, v, helpDoc.members[v]);
+				var results = validateHelpDoc(instance, p, helpDoc.members[p]);
 
 				if (results[columns['Documented']]) {
 					tr.className = 'expected';
 				}
 
+
 				for (var r in results) {
-					debugger;
 					var val = results[r];
 
 					td = tr.children[r];
@@ -218,11 +218,11 @@ function inspectInstance(obj) {
 		overridden: []
 	};
 
-	for(var v in obj) { 
-		if (obj.hasOwnProperty(v))
-			info.local.push(v);
+	for(var p in obj) {
+		if (obj.hasOwnProperty(p))
+			info.local.push(p);
 		else
-			info.remote.push(v); // = typeof obj[v];
+			info.remote.push(p); // = typeof obj[p];
 	}
 
 	return info;
@@ -232,15 +232,15 @@ function dumpDef(obj) {
 	var inherited = {};
 
 	console.log('************ Direct Properties ***********');
-	for (var v in obj) {
-		if (obj.hasOwnProperty(v)) 
-			console.log(v + ' : ' + typeof obj[v]); 
+	for (var p in obj) {
+		if (obj.hasOwnProperty(p))
+			console.log(p + ' : ' + typeof obj[p]);
 		else 
-			inherited[v] = v; 
+			inherited[p] = p;
 	}
 
 	console.log('************ Inherited ***********');
-	for(var v in inherited) { console.log(v + ' : ' + typeof obj[v]); }
+	for(var p in inherited) { console.log(p + ' : ' + typeof obj[p]); }
 
 }
 

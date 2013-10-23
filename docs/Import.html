@@ -33,6 +33,7 @@
 
 				#results .expected {
 					font-weight: bold;
+					color: #576AF1;
 				}
 
 				#results td,
@@ -85,14 +86,15 @@
 
 			function getProtoName(js) {
 
-				var protoAssign = /\.prototype\s*=\s*[^\n]*(THREE.[^)\n\s]*)/.exec(js);
+				var protoAssign = /\.prototype\s*=\s*[^\n]*THREE.([^)\n\s]*)/.exec(js);
+				return (protoAssign && protoAssign.length > 0) ? protoAssign[1] : null;
 
-				if (!protoAssign) return null;
+			}
 
-				protoAssign = (protoAssign.length > 0) ? protoAssign[1] : null;
+			function getSuperName(js) {
 
-				var segments = protoAssign.split('.');
-				return segments[1];
+				var baseCall = /THREE\.([^\s]*)\.call/.exec(js);
+				return (baseCall && baseCall.length > 0) ? baseCall[1] : null;
 
 			}
 
@@ -110,8 +112,7 @@
 					var baseType = typeof baseVal;
 					var instType = typeof instVal;
 
-					if (baseVal) {
-						console.log(baseType);
+					if (p in base) {
 						if (baseType == 'function' && !equals(instVal, baseVal, instType, baseType))
 							overridden.push(p);
 						else
@@ -156,19 +157,14 @@
 				var scriptUrl = '../' + helpDoc.Source[0].local;
 				var js = syncLoadScript(scriptUrl);
 
-				var protoName = getProtoName(js);
-
 				var instance = typeMap.getInstance(name);
 
-				var baseCall = /THREE\.([^\s]*)\.call/.exec(js);
+				var protoName = getProtoName(js);
+				var superName = getSuperName(js);
 
-				var xxx = protoName == baseCall;
-
-				debugger;
-
-				if (protoName) {
+				if (superName || protoName) {
 					// Compare the instance against its proto to decipher inheritance
-					categorized = compareTypes(instance, typeMap.getInstance(protoName))
+					categorized = compareTypes(instance, typeMap.getInstance(superName || protoName))
 				} else {
 					categorized = inspectInstance(instance);
 				}
@@ -232,13 +228,16 @@
 
 			function typesLoaded() {
 
+				var item,
+					li;
+
 				allTypes.innerHTML = '';
 
-				for (var v in collected) {
+				for (var i = 0, length = collected.length; i < length; i++) {
 
-					var item = collected[v];
+					item = collected[i];
 
-					var li = document.createElement('li');
+					li = document.createElement('li');
 					li.innerHTML = item.helpClassName;
 					li.setAttribute('data-url', item.helpUrl);
 					allTypes.appendChild(li);
@@ -260,7 +259,8 @@
 					[doc.Properties, doc.Methods].forEach(function (section) {
 
 						if (section && section.length > 0) {
-							for (var i in section) {
+
+							for (var i = 0, length = section.length; i < length; i++) {
 								var item = section[i];
 								doc.members[item.name] = item;
 							}
