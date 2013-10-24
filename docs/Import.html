@@ -171,22 +171,20 @@
 				// Display the help docs
 				mash.src = e.srcElement.getAttribute('data-url');
 
-				var name = e.srcElement.textContent;
-				var helpDoc = helpDocs[name];
+				var className = e.srcElement.textContent;
+				var helpDoc = helpDocs[className];
 				var categorized;
 
-				var protoName = helpDoc.protoName;
-				var superName = helpDoc.superName;
-				var instance = typeMap.getInstance(name);
+				var instance = typeMap.getInstance(className);
 
-				if (superName || protoName) {
+				if (helpDoc.superName || helpDoc.protoName) {
 					// Compare the instance against its proto to decipher inheritance
-					categorized = compareTypes(instance, typeMap.getInstance(superName || protoName))
+					categorized = compareTypes(instance, typeMap.getInstance(helpDoc.superName || helpDoc.protoName))
 				} else {
 					categorized = inspectInstance(instance);
 				}
 
-				var table = validateDocs(name, instance, helpDoc, categorized);
+				var table = validateDocs(className, instance, helpDoc, categorized);
 
 				var elem = document.getElementById('results');
 				elem.innerHTML = '';

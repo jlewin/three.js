@@ -1,8 +1,10 @@
 var nameTest = /\.([^\($\s]*)/;
 
-function sanitize(name) {
-	var matches = name.match(nameTest);
-	return matches && matches.length == 2 ? matches[1] : name;
+// Use nameTest to remove leading period and drop parens and everything after
+function sanitize(text) {
+
+	var matches = text.match(nameTest);
+	return matches && matches.length == 2 ? matches[1] : text;
 
 }
 
