@@ -50,9 +50,11 @@ function processHelpPage(bodyElement) {
 					var segments = name.split('::');
 					if (segments.length == 2) {
 						item.name = segments[0];
+						item.group = state.substr(0, 1);
 						item.type = segments[1];
 					} else if (name != item.name) {
 						item.full = item.name;
+						item.group = state.substr(0, 1);
 						item.name = name;
 					}
 				}

@@ -68,6 +68,8 @@
 		<script src="list.js"></script>
 		<script src="TestHelpDocs.js"></script>
 
+		<script src="../examples/fonts/helvetiker_regular.typeface.js"></script>
+
 		<script id="dyn"></script>
 
 		<iframe id="mash" style="width: 100%; height: 600px;"></iframe>
@@ -84,7 +86,9 @@
 			var collected = [];
 			var helpDocs = {};
 			var imported = 0;
-			var MAX_IMPORT = 20;
+			var MAX_IMPORT = 10;
+			var IMPORT_SKIP_COUNT = 32;
+			var errors = [];
 
 			var xhr = new XMLHttpRequest();
 
@@ -92,6 +96,11 @@
 
 				xhr.open("GET", path, false);
 				xhr.send(null);
+
+				if (xhr.status == '404') {
+					throw 'Error loading script';
+				}
+
 				return xhr.responseText;
 
 			}
@@ -105,7 +114,7 @@
 
 			function getSuperName(js) {
 
-				var baseCall = /THREE\.([^\s]*)\.call/.exec(js);
+				var baseCall = /THREE\.([^\s]*)\.(call|apply)/.exec(js);
 				return (baseCall && baseCall.length > 0) ? baseCall[1] : null;
 
 			}
@@ -166,13 +175,9 @@
 				var helpDoc = helpDocs[name];
 				var categorized;
 
-				var scriptUrl = '../' + helpDoc.Source[0].local;
-				var js = syncLoadScript(scriptUrl);
-
+				var protoName = helpDoc.protoName;
+				var superName = helpDoc.superName;
 				var instance = typeMap.getInstance(name);
-
-				var protoName = getProtoName(js);
-				var superName = getSuperName(js);
 
 				if (superName || protoName) {
 					// Compare the instance against its proto to decipher inheritance
@@ -195,13 +200,30 @@
 			var mash = document.getElementById('mash');
 			mash.onload = function () {
 
-				//console.log('Loaded: ' + activeItem[1]);
+				// Process the help documentation for the given item
+				var helpDoc = processHelpPage(mash.contentDocument.body);
+				helpDoc.helpClassName = activeItem[0];
+				helpDoc.helpUrl = activeItem[1] + '.html';
 
-				var info = processHelpPage(mash.contentDocument.body);
-				info.helpClassName = activeItem[0];
-				info.helpUrl = activeItem[1] + '.html';
+				// Process the script
+				var scriptUrl = '../' + helpDoc.Source[0].local;
 
-				collected.push(info);
+				try {
+
+					var js = syncLoadScript(scriptUrl);
+
+					helpDoc.protoName = getProtoName(js);
+					helpDoc.superName = getSuperName(js);
+
+					collected.push(helpDoc);
+
+				} catch (e) {
+
+					console.log(e.message);
+					helpDoc.error = e.message;
+					errors.push({ message: e.message, doc: helpDoc });
+
+				}
 
 				window.setTimeout(popLoadType, 500);
 
@@ -224,6 +246,12 @@
 
 						});
 
+					}
+
+					if (IMPORT_SKIP_COUNT > 0) {
+						for (var i = 0; i < IMPORT_SKIP_COUNT; i++) {
+							types.pop();
+						}
 					}
 
 					// Start processing the queue
