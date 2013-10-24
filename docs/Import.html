@@ -80,7 +80,7 @@
 
 		<script>
 
-			var key = 'allTypes';
+			var storageKey = 'helpDocs';
 			var types = [];
 			var activeItem;
 			var collected = [];
@@ -228,11 +228,12 @@
 			};
 
 
-			init();
+			loadDocuments();
 
-			function init() {
+			// Actively processes all help documents defined in list.js or loaded the processed results from storage
+			function loadDocuments() {
 
-				var json = window.localStorage[key];
+				var json = window.localStorage[storageKey];
 				if (!json) {
 
 					// Flatten the type info from the lists object into a hash of objectName -> path
@@ -321,7 +322,7 @@
 					loadPage(activeItem);
 
 				} else {
-					window.localStorage[key] = JSON.stringify(collected);
+					window.localStorage[storageKey] = JSON.stringify(collected);
 					typesLoaded();
 				}
 
