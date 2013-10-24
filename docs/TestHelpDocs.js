@@ -127,8 +127,16 @@ function validateDocs(className, instance, helpDoc, members) {
 					var val = results[r];
 
 					td = tr.children[r];
-					td.className = val;
-					td.innerHTML = val;
+
+					if (typeof val == 'boolean') {
+
+						td.className = val ? 'pass' : 'fail';
+
+					} else {
+
+						td.innerHTML = val;
+
+					}
 
 				}
 			}
@@ -173,7 +181,7 @@ function validateHelpDoc(instance, name, item) {
 
 	var length = item.val ? item.val.replace(todo, '').length : 0
 
-	setColumn('TODO', item.val.match(todo) != null)
+	setColumn('TODO', item.val.match(todo) == null)
 	setColumn('Chars', length);
 
 	var status;
