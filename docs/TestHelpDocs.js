@@ -1,19 +1,15 @@
 
-var types = {
+var TypeMapper = function () {
 
-	'number': 'number',
-	'Integer': 'number',
-	'Float': 'number',
+	// Map from help doc to runtime types as inferred from typeof
+	this.baseFromDocType = {
 
-	'Boolean': 'boolean',
-	'Boolean': 'boolean',
+		'Integer': 'number',
+		'Float': 'number',
+		'Boolean': 'boolean',
+		'String': 'string'
 
-	'string': 'string',
-	'String': 'string'
-
-};
-
-var TypeMapper = function(){
+	}
 
 	this['ShaderSprite'] = 'THREE.ShaderSprite';  // TODO: Object literal, can't use new, update docs
 	this['ShaderFlares'] = 'THREE.ShaderFlares';  // TODO: Object literal, can't use new, update docs
@@ -27,17 +23,6 @@ var TypeMapper = function(){
 	this['TextGeometry'] = 'new THREE.TextGeometry("hello", { size: 80, height: 20, curveSegments: 2, font: "helvetiker" })';
 	this['ShapeGeometry'] = 'var s = new THREE.Shape(); s.moveTo(  80, 20 ); s.lineTo(  40, 80 ); s.lineTo( 120, 80 ); s.lineTo(  80, 20 ); new THREE.ShapeGeometry(s)';
 	this['PolyhedronGeometry'] = 'new THREE.PolyhedronGeometry([[-1, 1, 0], [1, 1, 0], [-1, 1, 0]], [[0, 1, 2]])';
-
-	//this.ConvexGeometry = function () {
-
-	//	var points = [
-	//					new THREE.Vector3(100, 0, 0),
-	//					new THREE.Vector3(0, 100, 0),
-	//					new THREE.Vector3(0, 0, 100),
-	//					new THREE.Vector3(0, 0, 0)];
-
-	//	return new THREE.ConvexGeometry(points);
-	//}();
 
 	this.LatheGeometry = function () {
 		var points = [];
@@ -73,7 +58,7 @@ TypeMapper.prototype.getInstance = function (typeName) {
 };
 
 var typeMap = new TypeMapper();
-
+var todoText = /TODO/ig;
 var columns = {
 	Name: 0,
 	Documented: 1,
@@ -152,10 +137,10 @@ function validateDocs(className, instance, helpDoc, members) {
 			td = tr.children[columns.Name];
 			td.innerHTML = p;
 
-			// TODO: Come up with some way to handle this...
+			// TODO: Handle constructor documentation
 			if (p != 'constructor') {
 
-				var results = validateHelpDoc(instance, p, helpDoc.members[p]);
+				var results = validateHelpDetails(instance, p, helpDoc.members[p]);
 
 				if (results[columns['Documented']]) {
 					tr.className = 'expected';
@@ -184,88 +169,83 @@ function validateDocs(className, instance, helpDoc, members) {
 	}
 }
 
-var todo = /TODO/ig;
+function validateHelpDetails(instance, name, memberDocs) {
 
-// @item = HelpDoc property item
-function validateHelpDoc(instance, name, item) {
+	var testResults = [];
 
-	function setColumn(name, val) {
-		info[columns[name]] = val;
-	}
-
-	var info = [];
-
-	var hasHelpDefinition = (item && item != null) ? true : false;
-	setColumn('Documented', hasHelpDefinition);
+	var hasHelpDefinition = (memberDocs && memberDocs != null) ? true : false;
+	testResults[columns['Documented']] = hasHelpDefinition;
 
 	// TODO: Consider... we could add a mechanism to lookup additional info on 
 	// types at this point to include in our populated results. For example,
 	// the ShaderSprite has a .sprite member which is an anonymous type and
-	// fall short in the docs. Providing a hook here would allow us to extract
+	// falls short in the docs. Providing a hook here would allow us to extract
 	// the type details for depiction in the docs or the docs test/helper suite
 	var itemInstance = instance[name];
 	var hasProp = itemInstance != null;
 
 	// Early exit due to dependence on help details below
-	if (!hasHelpDefinition) return info;
+	if (!hasHelpDefinition) return testResults;
 
 	var actualType = typeof itemInstance;
 
-	// Sanitize type names from help docs into js base types
-	var expectedType = types[item.type] || item.type;
+	// Map help doc types into expected results from typeof operator on runtime instance
+	var expectedType = typeMap.baseFromDocType[memberDocs.type] || memberDocs.type;
 	
-	var correctType = (item.t == 'M' && actualType == 'function') || (expectedType == actualType);
+	// The docs are accurate when the item is a function and it was in (M)embers or when the santized types match
+	var isCorrectType = (memberDocs.group == 'M' && actualType == 'function') || (expectedType == actualType);
 
-	var unableToValidate = false;
+	// Remove todo text and extract length
+	var length = memberDocs.val ? memberDocs.val.replace(todoText, '').length : 0
 
-	var length = item.val ? item.val.replace(todo, '').length : 0
+	testResults[columns['TODO']] = memberDocs.val.match(todoText) == null;
+	testResults[columns['Chars']] = length;
+	testResults[columns['Help']] = inferQualityFromLength(length);
+	testResults[columns['CorrectType']] = hasCorrectTypeDefinition();
 
-	setColumn('TODO', item.val.match(todo) == null)
-	setColumn('Chars', length);
+	return testResults;
 
-	var status;
-	if (length < 6) {
-		status = 'None';
-	} else if (length < 15) {
-		status = 'Abridged';
-	} else if (length < 30) {
-		status = 'Short';
-	} else {
-		status = 'ok';
-	}
+	function hasCorrectTypeDefinition() {
 
-	setColumn('Help', status);
-	
-	// If the type is incorrect, probe further to see if comparision is blocked by undefined
-	if (!correctType && actualType == 'object') {
+		var unableToValidate = false;
 
-		if (itemInstance == null) {
-			debugger;
-			unableToValidate = correctType == true;
-		} else if(Array.isArray(itemInstance) && item.type == 'array') {
-			correctType = true;
-		} else {
-			// if typeof equals object, but a more specific class was specified, validate with instanceof
-			var typeFunction = THREE[item.type];
-			correctType = typeFunction && itemInstance instanceof typeFunction;
+		// If the type is incorrect, probe further to see if comparision is blocked by undefined
+		if (!isCorrectType && actualType == 'object') {
+
+			if (itemInstance == null) {
+				debugger;
+				unableToValidate = isCorrectType == true;
+			} else if (Array.isArray(itemInstance) && memberDocs.type == 'array') {
+				isCorrectType = true;
+			} else {
+				// if typeof equals object, but a more specific class was specified, validate with instanceof
+				var typeFunction = THREE[memberDocs.type];
+				isCorrectType = typeFunction && itemInstance instanceof typeFunction;
+			}
 		}
+
+		return unableToValidate ? 'Unknown' : isCorrectType;
+
 	}
 
-	setColumn('CorrectType', unableToValidate ? 'Unknown' : correctType);
+}
 
-	console.log((( hasProp && correctType ) ? '- Pass: ' : '- Fail: ') + item.name + ' : ' + actualType);
+// TODO: Word count would be a better quality metric
+function inferQualityFromLength(length) {
 
-	if (!hasProp)
-		console.log('  - Missing ' + item.name);
-
-	if (!correctType)
-		console.log('  - Type mismatch: ' + item.type + ' != ' + actualType);
-
-	return info;
+	if (length < 6) {
+		return 'None';
+	} else if (length < 15) {
+		return 'Abridged';
+	} else if (length < 30) {
+		return 'Short';
+	} else {
+		return 'ok';
+	}
 }
 
 function inspectInstance(obj) {
-	var info = {
+	var members = {
 		local: [],
 		remote: [],
 		overridden: []
@@ -273,28 +253,10 @@ function inspectInstance(obj) {
 
 	for(var p in obj) {
 		if (obj.hasOwnProperty(p))
-			info.local.push(p);
+			members.local.push(p);
 		else
-			info.remote.push(p); // = typeof obj[p];
+			members.remote.push(p); // = typeof obj[p];
 	}
 
-	return info;
+	return members;
 }
-
-function dumpDef(obj) {
-	var inherited = {};
-
-	console.log('************ Direct Properties ***********');
-	for (var p in obj) {
-		if (obj.hasOwnProperty(p))
-			console.log(p + ' : ' + typeof obj[p]);
-		else 
-			inherited[p] = p;
-	}
-
-	console.log('************ Inherited ***********');
-	for(var p in inherited) { console.log(p + ' : ' + typeof obj[p]); }
-
-}
-
-//console.log(dumpDef2(obj));

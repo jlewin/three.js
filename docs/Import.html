@@ -201,7 +201,7 @@
 			mash.onload = function () {
 
 				// Process the help documentation for the given item
-				var helpDoc = processHelpPage(mash.contentDocument.body);
+				var helpDoc = extractHelpDoc(mash.contentDocument.body);
 				helpDoc.helpClassName = activeItem[0];
 				helpDoc.helpUrl = activeItem[1] + '.html';
 

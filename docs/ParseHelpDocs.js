@@ -6,9 +6,9 @@ function sanitize(name) {
 
 }
 
-function processHelpPage(bodyElement) {
+function extractHelpDoc(bodyElement) {
 
-	var info = {
+	var helpDoc = {
 		breadCrumb: bodyElement.firstChild.textContent.trim(),
 	};
 
@@ -22,9 +22,9 @@ function processHelpPage(bodyElement) {
 		switch (context.nodeName) {
 			case 'H1':
 
-				info.className = context.innerText;
+				helpDoc.className = context.innerText;
 				container = [];
-				info.description = container;
+				helpDoc.description = container;
 				state = 'class';
 				current = '';
 				break;
@@ -32,7 +32,7 @@ function processHelpPage(bodyElement) {
 			case 'H2':
 				state = context.innerText;
 				container = [];
-				info[state] = container;
+				helpDoc[state] = container;
 				current = '';
 				break;
 
@@ -72,5 +72,5 @@ function processHelpPage(bodyElement) {
 
 	}
 
-	return info;
+	return helpDoc;
 }
