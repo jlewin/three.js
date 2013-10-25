@@ -64,12 +64,15 @@
 	<body>
 		<script src="../build/three.js"></script>
 
-		<script src="HelpDocParser.js"></script>
+		<!-- TypeLoader dependencies -->
+		<script src="../examples/fonts/helvetiker_regular.typeface.js"></script>
+		<script src="../examples/js/loaders/ColladaLoader.js"></script>
+		
 		<script src="list.js"></script>
+
+		<script src="HelpDocParser.js"></script>
 		<script src="TestHelpDocs.js"></script>
 		<script src="node_indexer/tokenmap.js"></script>
-
-		<script src="../examples/fonts/helvetiker_regular.typeface.js"></script>
 
 		<script id="dyn"></script>
 
@@ -83,42 +86,14 @@
 
 			var storageKey = 'helpDocs';
 			var types = [];
-			var activeItem;
-			var collected = [];
 			var helpDocs = {};
-			var imported = 0;
-			var MAX_IMPORT = 10;
-			var IMPORT_SKIP_COUNT = 32;
 			var errors = [];
+			var hostFrame = document.getElementById('hostFrame');
 
-			var xhr = new XMLHttpRequest();
+			var ul = document.getElementById('allTypes');
+			ul.addEventListener('click', showClickedItem, false);
 
-			function syncLoadScript(path) {
-
-				xhr.open("GET", path, false);
-				xhr.send(null);
-
-				if (xhr.status == '404') {
-					throw 'Error loading script';
-				}
-
-				return xhr.responseText;
-
-			}
-
-			function getProtoName(js) {
-
-				var protoAssign = /\.prototype\s*=\s*[^\n]*THREE.([^)\n\s]*)/.exec(js);
-				return (protoAssign && protoAssign.length > 0) ? protoAssign[1] : null;
-
-			}
-
-			function getSuperName(js) {
-
-				var baseCall = /THREE\.([^\s]*)\.(call|apply)/.exec(js);
-				return (baseCall && baseCall.length > 0) ? baseCall[1] : null;
-
-			}
+			loadDocuments();
 
 			function compareTypes(instance, base) {
 
@@ -176,6 +151,15 @@
 				var helpDoc = helpDocs[className];
 				var categorized;
 
+				var elem = document.getElementById('results');
+				elem.innerHTML = '';
+
+				var tbl = document.createElement('table');
+				
+				var relatedFiles = tokenMap.tokenMap['THREE.' + className].map(function(i){ return tokenMap.files[i]});
+				showDependants(tbl, relatedFiles);
+				elem.appendChild(tbl);
+
 				var instance = typeMap.getInstance(className);
 
 				if (helpDoc.superName || helpDoc.protoName) {
@@ -186,53 +170,9 @@
 				}
 
 				var table = validateDocs(className, instance, helpDoc, categorized);
-
-				var elem = document.getElementById('results');
-				elem.innerHTML = '';
 				elem.appendChild(table);
 
-				var relatedFiles = tokenMap.tokenMap['THREE.' + className].map(function(i){ return tokenMap.files[i]});
-				showDependants(table, relatedFiles);
-
 			}
-
-			var ul = document.getElementById('allTypes');
-			ul.addEventListener('click', showClickedItem, false);
-
-			var hostFrame = document.getElementById('hostFrame');
-			hostFrame.onload = function () {
-
-				// Process the help documentation for the given item
-				var helpDoc = extractHelpDoc(hostFrame.contentDocument.body);
-				helpDoc.helpClassName = activeItem[0];
-				helpDoc.helpUrl = activeItem[1] + '.html';
-
-				// Process the script
-				var scriptUrl = '../' + helpDoc.Source[0].local;
-
-				try {
-
-					var js = syncLoadScript(scriptUrl);
-
-					helpDoc.protoName = getProtoName(js);
-					helpDoc.superName = getSuperName(js);
-
-					collected.push(helpDoc);
-
-				} catch (e) {
-
-					console.log(e.message);
-					helpDoc.error = e.message;
-					errors.push({ message: e.message, doc: helpDoc });
-
-				}
-
-				window.setTimeout(popLoadType, 500);
-
-			};
-
-
-			loadDocuments();
 
 			// Actively processes all help documents defined in list.js or loaded the processed results from storage
 			function loadDocuments() {
@@ -240,36 +180,22 @@
 				var json = window.localStorage[storageKey];
 				if (!json) {
 
-					// Flatten the type info from the lists object into a hash of objectName -> path
-					for (var i in list.Reference) {
-
-						list.Reference[i].forEach(function (t) {
-
-							types.push(t);
-
-						});
-
-					}
-
-					if (IMPORT_SKIP_COUNT > 0) {
-						for (var i = 0; i < IMPORT_SKIP_COUNT; i++) {
-							types.pop();
-						}
-					}
-
-					// Start processing the queue
-					popLoadType();
+					var docParser = new HelpDocParser(hostFrame,  list.Reference, function(collected2) {
+						window.localStorage[storageKey] = JSON.stringify(collected2);
+						typesLoaded(collected2);
+					});
+					docParser.run();
 
 				} else {
 
-					collected = JSON.parse(json);
-					typesLoaded();
+					typesLoaded(JSON.parse(json));
 
 				}
 
 			}
 
-			function typesLoaded() {
+			// TODO: Rename to verb based definition of functionality
+			function typesLoaded(collected) {
 
 				var item,
 					li;
@@ -314,28 +240,6 @@
 					helpDocs[doc.helpClassName] = doc;
 
 				});
-
-			}
-
-			function popLoadType() {
-
-				activeItem = types.pop();
-
-				if (activeItem && imported < MAX_IMPORT) {
-
-					loadPage(activeItem);
-
-				} else {
-					window.localStorage[storageKey] = JSON.stringify(collected);
-					typesLoaded();
-				}
-
-			}
-
-			function loadPage(page) {
-				//console.log('Loading ' + page[0]);
-				hostFrame.src = page[1] + '.html';
-				imported++;
 
 			}
 

@@ -1,6 +1,8 @@
 
 var TypeMapper = function () {
 
+	var that = this;
+
 	// Map from help doc to runtime types as inferred from typeof
 	this.baseFromDocType = {
 
@@ -11,8 +13,8 @@ var TypeMapper = function () {
 
 	}
 
-	this['ShaderSprite'] = 'THREE.ShaderSprite';  // TODO: Object literal, can't use new, update docs
-	this['ShaderFlares'] = 'THREE.ShaderFlares';  // TODO: Object literal, can't use new, update docs
+	this['ShaderSprite'] = 'THREE.ShaderSprite';  // DOCNOTE: Object literal, can't use new, update docs
+	this['ShaderFlares'] = 'THREE.ShaderFlares';  // DOCNOTE: Object literal, can't use new, update docs
 	this['CameraHelper'] = 'new THREE.CameraHelper(new THREE.Camera())';
 	this['SpotLightHelper'] = 'new THREE.SpotLightHelper(new THREE.SpotLight())';
 	this['PointLightHelper'] = 'new THREE.PointLightHelper(new THREE.PointLight())';
@@ -23,6 +25,24 @@ var TypeMapper = function () {
 	this['TextGeometry'] = 'new THREE.TextGeometry("hello", { size: 80, height: 20, curveSegments: 2, font: "helvetiker" })';
 	this['ShapeGeometry'] = 'var s = new THREE.Shape(); s.moveTo(  80, 20 ); s.lineTo(  40, 80 ); s.lineTo( 120, 80 ); s.lineTo(  80, 20 ); new THREE.ShapeGeometry(s)';
 	this['PolyhedronGeometry'] = 'new THREE.PolyhedronGeometry([[-1, 1, 0], [1, 1, 0], [-1, 1, 0]], [[0, 1, 2]])';
+
+	
+	// BUG/DOCNOTE: KeyFrameAnimation is invoke on library load in *all* cases
+	/* this.KeyFrameAnimation = function () { */ function buildKFA () {
+		var loader = new THREE.ColladaLoader();
+		loader.load( '../examples/models/collada/pump/pump.dae', function ( collada ) {
+
+			var animation = collada.animations[ 0 ];
+
+			var handler = THREE.AnimationHandler;
+			handler.add( animation );
+
+			that.KeyFrameAnimation = new THREE.KeyFrameAnimation( animation.node, animation.name );
+		} );
+
+	}
+
+	buildKFA();
 
 	this.LatheGeometry = function () {
 		var points = [];
@@ -101,7 +121,7 @@ function validateDocs(className, instance, helpDoc, members) {
 
 	if (members.remote.length > 0) {
 
-		createHeading(table, 'Inherited');
+		createHeading(table, 'Inherited from ' + (helpDoc.superName ? helpDoc.superName : ' Anonymous') );
 		dumpMembers(members.remote);
 	}
 
