@@ -154,7 +154,8 @@ finder.on('end', function () {
     
     writeFile('dbgresults.js', JSON.stringify(allResults));
         
-    writeFile('tokenmap.js', JSON.stringify({tokenMap: tokenMap, files: files}), function() {
+        
+    writeFile('tokenmap.js', 'var tokenMap = ' + JSON.stringify({tokenMap: tokenMap, files: files}) + ';', function() {
         
         console.timeEnd(timerName);
     }); 
