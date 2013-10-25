@@ -69,18 +69,20 @@ var columns = {
 	length: 6
 };
 
+var tr, td;
+
 function validateDocs(className, instance, helpDoc, members) {
 
 	var table = document.createElement('table');
 
 	// Dump some basic info about the class into the table
-	var tr = createHeading('Class: ' + helpDoc.className + ' &bull; Prototype: ' + helpDoc.protoName + ' &bull; Super: ' + helpDoc.superName);
+	var tr = createHeading(table, 'Class: ' + helpDoc.className + ' &bull; Prototype: ' + helpDoc.protoName + ' &bull; Super: ' + helpDoc.superName);
 	var td = tr.cells[0];
 	td.style.borderBottom = 'none';
 	td.style.background = '#bbb';
 
 	// Display column headings
-	var tr = createRow(table, 'th', columns.length);
+	tr = createRow(table, 'th', columns.length);
 	for (var c in columns) {
 
 		if (c == 'length') continue;
@@ -89,42 +91,21 @@ function validateDocs(className, instance, helpDoc, members) {
 		tr.children[i].innerHTML = c;
 	}
 
-	createHeading('Members');
+	createHeading(table, 'Members');
 	dumpMembers(members.local);
 
 	if (members.overridden.length > 0) {
-		createHeading('Overridden');
+		createHeading(table, 'Overridden');
 		dumpMembers(members.overridden);
 	}
 
 	if (members.remote.length > 0) {
 
-		createHeading('Inherited');
+		createHeading(table, 'Inherited');
 		dumpMembers(members.remote);
 	}
 
 	return table;
-
-	function createRow(table, tag, cellCount) {
-		var tr = document.createElement('tr');
-		table.appendChild(tr);
-
-		for (var i = 0; i < cellCount; i++) {
-			tr.appendChild(document.createElement(tag));
-		}
-
-		return tr;
-	}
-
-	function createHeading(title) {
-		tr = createRow(table, 'th', 1);
-		td = tr.children[0];
-		td.setAttribute('colspan', columns.length);
-		td.innerHTML = title;
-		td.className = 'heading'
-
-		return tr;
-	}
 
 	function dumpMembers(items) {
 
@@ -167,6 +148,30 @@ function validateDocs(className, instance, helpDoc, members) {
 		}
 
 	}
+}
+
+function createRow(table, tag, cellCount, colspan) {
+	var tr = document.createElement('tr');
+	table.appendChild(tr);
+
+	for (var i = 0; i < cellCount; i++) {
+		tr.appendChild(document.createElement(tag));
+	}
+
+	if(colspan) {
+		tr.cells[0].colSpan = colspan;
+	}
+
+	return tr;
+}
+
+function createHeading(table, text, className) {
+	tr = createRow(table, 'th', 1, columns.length);
+	td = tr.cells[0];
+	td.innerHTML = text;
+	td.className = className || 'heading'
+
+	return tr;
 }
 
 function validateHelpDetails(instance, name, memberDocs) {
@@ -225,6 +230,24 @@ function validateHelpDetails(instance, name, memberDocs) {
 		}
 
 		return unableToValidate ? 'Unknown' : isCorrectType;
+
+	}
+
+}
+
+function showDependants(table, files) {
+	createHeading(table, '&nbsp;', 'separator' );
+	createHeading(table, 'Related', 'related');
+
+	for(var i = 0, length = files.length; i < length; i++) {
+
+		tr = createRow(table, 'td', 1, columns.length);
+		var path = '/' + files[i];
+		var a = document.createElement('a');
+		a.target = 'hostFrame';
+		a.href = path;
+		a.innerHTML = path;
+		tr.cells[0].appendChild(a);
 
 	}
 
