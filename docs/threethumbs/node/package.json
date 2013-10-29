@@ -1,0 +1,17 @@
+{
+  "name": "threethumbskit",
+  "version": "0.0.0",
+  "description": "Thumb generator for Three.js examples",
+  "main": "index.js",
+  "dependencies": {
+    "easyimage": "latest",
+    "async": "latest",
+    "busboy": "latest"
+  },
+  "author": {
+    "name": "John Lewin",
+    "email": "lewin76@gmail.com"
+  },
+  "license": "BSD-2-Clause",
+  "devDependencies": {}
+}

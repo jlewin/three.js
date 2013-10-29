@@ -1,0 +1,20 @@
+{
+    "manifest_version": 2,
+    "name": "ThreeCapture",
+    "version": "0.0.32",
+    "description": "Three.js Examples to Thumbs",
+    "permissions": [
+		"tabs", 
+		"<all_urls>",
+		"http://localhost:8000/"],
+    "browser_action": {
+        "default_icon": "capture48.png",
+        "default_title": "Capture tab"      
+    },
+    "icons": {
+        "48" : "capture48.png"
+    },
+    "background" : {
+        "scripts": ["background.js", "Examples.js"]
+    }
+}
