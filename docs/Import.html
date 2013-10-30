@@ -280,10 +280,13 @@
 
 			function emptyElement() {
 
-				for (var e in arguments) {
 
-					while (e.lastChild)
-						e.removeChild(e.lastChild);
+				for (var p in arguments) {
+
+					var elem = arguments[p];
+
+					while (elem.lastChild)
+						elem.removeChild(elem.lastChild);
 
 				}
 
