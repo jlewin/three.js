@@ -1,8 +1,7 @@
-var find = require('findit');
-var path = require('path');
-var fs = require('fs')
-
-var timerName = 'Elapsed Time';
+var find = require('findit'),
+    path = require('path');
+    fs = require('fs'),
+    timerName = 'Elapsed Time';
 
 // Start timer
 console.time(timerName);
@@ -17,7 +16,11 @@ var startupPath = process.cwd();
 process.chdir('../../');
 
 // Start path iteration
+//var finder = find('.');
+
 var finder = find('.');
+//var finder = find('examples/webgldeferred_animation.html');
+//var finder = find('docs/node_indexer/node_modules/findit/test/stop/q');
 
 // Paths to ignore
 var filters = ['build', 'docs', '.git'];
@@ -25,6 +28,7 @@ var filterCount = filters.length;
                
 var limit = -1;
 var processed = 0;
+var fileCount = 0;
 
 // At this point allResults is only used for debugging and 
 var allResults = [];
@@ -45,26 +49,45 @@ var tokenMap = new TokenMapper();
 
 finder.on('file', function (file, stat) {
 
-    var ext = path.extname(file).toLowerCase();
+	//console.log('found file: ' + fileCount, stat);
+
+	var ext = path.extname(file).toLowerCase();
+
     if(ext === '.js' || ext === '.html') {
     
-        if(limit > 0 && processed++ >= limit) return;
-        
+    	if (limit > 0 && processed++ >= limit) return;
+
+    	fileCount++;
+    	console.log(fileCount);
+
         var formattedPath = file.replace(/\\/g, '/');
         
         files.push(formattedPath);
         var fileIndex = files.length - 1;
 
-        readFile(file, function(text){
-        
-            allResults.push({ 
-                file: formattedPath,
-                index: fileIndex,
-                results: extractReferences(text, fileIndex)
-            });
-        
+        fs.readFile(file, 'utf8', function (err, text) {
+        	//process.stdout.write(".");
+
+        	console.log('      ReadComplete: ', fileCount--, fileCount, file);
+
+        	if (err) {
+        		return console.log(err);
+        	}
+
+        	allResults.push({
+        		file: formattedPath,
+        		index: fileIndex,
+        		results: extractReferences(text, fileIndex)
+        	});
+
+        	if (fileCount == 0) {
+
+        		console.log('-------------- Done ----------------');
+
+        	}
+
         });
-        
+
     }
 });
 
@@ -82,30 +105,22 @@ finder.on('directory', function (dir, stat, stop) {
     
 });
 
-// Read file contents
-function readFile(filePath, completed) {
-
-    fs.readFile(filePath, 'utf8', function (err,data) {
-        process.stdout.write(".");
-
-        if (err) {
-            return console.log(err);
-        }
-
-        completed(data);
-    });
-}
-
 var re = /(\.call|\.prototype|\.apply)/g;
 var typeMatch = /THREE\.[\w\.]+/g;
     
 function extractReferences(text, fileIndex) {
+
+
 
     // Hash to dedupe
     var results = {}; 
     
     // Match THREE.xxx * [^ \s or ( or $]
     var matched = text.match(typeMatch);
+
+
+    //console.log('matched: ' + matched);
+
     
     var arr = [];
     
@@ -116,6 +131,9 @@ function extractReferences(text, fileIndex) {
         });
     }
     
+   // console.log('\r\nResults: ' + JSON.stringify(results));
+
+
     // Iterate deduped items and push to token map
     for( var v in results ) {
         arr.push(v);
@@ -124,6 +142,11 @@ function extractReferences(text, fileIndex) {
         
     }
     
+    // console.log('\r\nTokenmap: ' + JSON.stringify(tokenMap));
+
+
+    // console.log('\r\n arr: ' + arr);
+
     return arr;
 
 }
@@ -147,14 +170,12 @@ function writeFile(filePath, data, callback) {
 
 finder.on('end', function () {
 
-    console.log('\r\n');
+    console.log('\r\n ---------------------------- END Recurse --------------------------');
 
     // Restore working directory to startup path, then output results
     process.chdir(startupPath);
-    
+
     writeFile('dbgresults.js', JSON.stringify(allResults));
-        
-        
     writeFile('tokenmap.js', 'var tokenMap = ' + JSON.stringify({tokenMap: tokenMap, files: files}) + ';', function() {
         
         console.timeEnd(timerName);

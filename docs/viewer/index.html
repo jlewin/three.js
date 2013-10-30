@@ -1,186 +1,22 @@
 ﻿<!doctype html>
 <html>
 	<head>
-		<title>Import</title>
-		<style type="text/css">
-	  /* Webkit micro scrollbars */
-
-	::-webkit-scrollbar {
-		width:9px;
-	}
-
-	::-webkit-scrollbar-track {
-		-webkit-border-radius:5px;
-		border-radius:5px;
-		background: rgba(140,140,140,0.1);
-	}
-	::-webkit-scrollbar-thumb {
-		-webkit-border-radius:5px;
-		border-radius:5px;
-		background: rgba(140,140,140,0.5);
-	}
-
-	::-webkit-scrollbar-thumb:hover {
-		background: rgba(140,140,140,0.4);
-	}
-
-	::-webkit-scrollbar-thumb:window-inactive {
-		background: rgba(140,140,140,0.5);
-	}
-
-
-			body {
-				font-family: sans-serif;
-				margin: 0;
-			}
-			#allTypes {
-				margin: 0;
-				padding: 10px;
-				overflow: auto;
-			}
-
-				#allTypes li {
-					list-style: none;
-					margin: 2px;
-					display: inline-block;
-					background: #ddd;
-					border-radius: 3px 4px;
-					padding: 2px 5px;
-					font-size: xx-small;
-					cursor: pointer;
-				}
-
-			#results {
-				width: 400px;
-				height: 590px;
-				float: right;
-				background: #bbb;
-				border: solid 1px #ddd;
-				padding: 5px;
-				overflow: scroll;
-			}
-
-				#results .expected {
-					font-weight: bold;
-					color: #576AF1;
-				}
-
-				#results td,
-				#results th {
-					font-size: xx-small;
-					text-align: left;
-				}
-
-				#results .heading {
-					border-bottom: solid 1px #F17777;
-					padding: 3px;
-				}
-
-				#results td.pass,
-				#results td.fail {
-					background: url(images/tick.png) no-repeat;
-					width: 16px;
-					height: 16px;
-					padding: 0;
-				}
-
-				#results td.fail {
-					background-position: 0 -16px;
-				}
-
-				#links {
-
-					height: 59px;
-					background: #bbb;
-					overflow: hidden;
-				}
-
-				.exampleView {
-					margin: 0;
-					padding: 0;
-					overflow: auto;
-				}
-
-				.exampleView li {
-
-					margin: 6px;
-					list-style: none;
-					float: left;
-				}
-
-				.exampleView a.example {
-					/* width: 60px; height: 33px;
-					width: 150px; height: 83px;
-					width: 178px; height: 98px;  */
-
-					width: 80px; height: 44px;
-
-					border-radius: 3px 4px;
-					box-shadow: 1px 1px 3px #888;
-					display: block;
-					cursor: pointer;
-					background: url(blank.png) no-repeat;
-				}
-
-			#scripts {
-				clear: left;
-				background: #969696;
-				margin: 25px 10px;
-				padding: 10px 0 5px 11px;
-				border-radius: 3px;
-				position: relative;
-			}
-
-				#scripts li {
-					margin: 0 3px 0 0;
-				}
-
-				/*#scripts li:first-child {
-					margin-left: 10px;
-				}*/
-
-				#scripts a {
-					padding: 3px 3px 3px 8px;
-					background: #AAA;
-					border-left: solid 1px #E0AE0B;
-					border-radius: 2px;
-					color: #444;
-					margin-right: 8px;
-					font-size: 0.7em;
-					width: 108px;
-					text-decoration: none;
-					line-height: 12px;
-					display: inline-block;
-					box-sizing: border-box;
-					overflow: hidden;
-					text-overflow: ellipsis;
-				}
-
-				#scripts a:hover {
-					color: #000;
-					border-color: #F4CE0B;
-				}
-
-				#scripts img {
-					position: absolute;
-					margin-top: -25px;
-					margin-left: -20px;
-				}
-
-		</style>
+		<title>Help Docs</title>
+		<link href="style.css" rel="stylesheet" />
+		<base href="/" />
 	</head>
 	<body>
-		<script src="../build/three.js"></script>
+		<script src="build/three.js"></script>
 
 		<!-- TypeLoader dependencies -->
-		<script src="../examples/fonts/helvetiker_regular.typeface.js"></script>
-		<script src="../examples/js/loaders/ColladaLoader.js"></script>
+		<script src="examples/fonts/helvetiker_regular.typeface.js"></script>
+		<script src="examples/js/loaders/ColladaLoader.js"></script>
 
-		<script src="list.js"></script>
+		<script src="docs/list.js"></script>
 
-		<script src="HelpDocParser.js"></script>
-		<script src="TestHelpDocs.js"></script>
-		<script src="node_indexer/tokenmap.js"></script>
+		<script src="docs/viewer/HelpDocParser.js"></script>
+		<script src="docs/viewer/TestHelpDocs.js"></script>
+		<script src="docs/node_indexer/tokenmap.js"></script>
 
 		<script id="dyn"></script>
 
@@ -196,7 +32,7 @@
 
 			<div id="scripts">
 
-				<img src="js40.png" alt="Javascript" />
+				<img src="docs/viewer/js40.png" alt="Javascript" />
 
 				<div></div>
 
@@ -280,7 +116,6 @@
 
 			function emptyElement() {
 
-
 				for (var p in arguments) {
 
 					var elem = arguments[p];
@@ -295,7 +130,7 @@
 			function showClickedItem(e) {
 
 				// Display the help docs
-				el.frame.src = e.srcElement.getAttribute('data-url');
+				el.frame.src = 'docs/' + e.srcElement.getAttribute('data-url');
 
 				var className = e.srcElement.textContent;
 				var helpDoc = helpDocs[className];
