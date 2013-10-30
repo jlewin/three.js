@@ -1,3 +1,4 @@
+"use strict";
 
 var TypeMapper = function () {
 
@@ -11,10 +12,20 @@ var TypeMapper = function () {
 		'Boolean': 'boolean',
 		'String': 'string'
 
-	}
+	};
 
-	this['ShaderSprite'] = 'THREE.ShaderSprite';  // DOCNOTE: Object literal, can't use new, update docs
-	this['ShaderFlares'] = 'THREE.ShaderFlares';  // DOCNOTE: Object literal, can't use new, update docs
+	// DOCNOTE: Object literal, can't use new, update docs
+	// Object Literals
+	this['ShaderSprite'] = 'THREE.ShaderSprite';  
+	this['ShaderFlares'] = 'THREE.ShaderFlares';
+	this['Math'] = 'THREE.Math';
+	this['FontUtils'] = 'THREE.FontUtils';
+	this['ImageUtils'] = 'THREE.ImageUtils';
+	this['SceneUtils'] = 'THREE.SceneUtils';
+	this['GeometryUtils'] = 'THREE.GeometryUtils';
+	this['AnimationHandler'] = 'THREE.AnimationHandler';
+
+	// Constructor dependencies
 	this['CameraHelper'] = 'new THREE.CameraHelper(new THREE.Camera())';
 	this['SpotLightHelper'] = 'new THREE.SpotLightHelper(new THREE.SpotLight())';
 	this['PointLightHelper'] = 'new THREE.PointLightHelper(new THREE.PointLight())';
@@ -91,6 +102,8 @@ var columns = {
 
 var tr, td;
 
+var nameMatch = /\/([^\/]+)\./i;
+
 function validateDocs(className, instance, helpDoc, members) {
 
 	var table = document.createElement('table');
@@ -105,7 +118,9 @@ function validateDocs(className, instance, helpDoc, members) {
 	tr = createRow(table, 'th', columns.length);
 	for (var c in columns) {
 
-		if (c == 'length') continue;
+		if (c == 'length') {
+			continue;
+		}
 
 		var i = columns[c];
 		tr.children[i].innerHTML = c;
@@ -189,7 +204,7 @@ function createHeading(table, text, className) {
 	tr = createRow(table, 'th', 1, columns.length);
 	td = tr.cells[0];
 	td.innerHTML = text;
-	td.className = className || 'heading'
+	td.className = className || 'heading';
 
 	return tr;
 }
@@ -198,7 +213,7 @@ function validateHelpDetails(instance, name, memberDocs) {
 
 	var testResults = [];
 
-	var hasHelpDefinition = (memberDocs && memberDocs != null) ? true : false;
+	var hasHelpDefinition = (memberDocs && memberDocs !== null) ? true : false;
 	testResults[columns['Documented']] = hasHelpDefinition;
 
 	// TODO: Consider... we could add a mechanism to lookup additional info on 
@@ -207,10 +222,12 @@ function validateHelpDetails(instance, name, memberDocs) {
 	// falls short in the docs. Providing a hook here would allow us to extract
 	// the type details for depiction in the docs or the docs test/helper suite
 	var itemInstance = instance[name];
-	var hasProp = itemInstance != null;
+	var hasProp = itemInstance !== null;
 
 	// Early exit due to dependence on help details below
-	if (!hasHelpDefinition) return testResults;
+	if (!hasHelpDefinition) {
+		return testResults;
+	}
 
 	var actualType = typeof itemInstance;
 
@@ -221,9 +238,9 @@ function validateHelpDetails(instance, name, memberDocs) {
 	var isCorrectType = (memberDocs.group == 'M' && actualType == 'function') || (expectedType == actualType);
 
 	// Remove todo text and extract length
-	var length = memberDocs.val ? memberDocs.val.replace(todoText, '').length : 0
+	var length = memberDocs.val ? memberDocs.val.replace(todoText, '').length : 0;
 
-	testResults[columns['TODO']] = memberDocs.val.match(todoText) == null;
+	testResults[columns['TODO']] = memberDocs.val.match(todoText) === null;
 	testResults[columns['Chars']] = length;
 	testResults[columns['Help']] = inferQualityFromLength(length);
 	testResults[columns['CorrectType']] = hasCorrectTypeDefinition();
@@ -237,9 +254,9 @@ function validateHelpDetails(instance, name, memberDocs) {
 		// If the type is incorrect, probe further to see if comparision is blocked by undefined
 		if (!isCorrectType && actualType == 'object') {
 
-			if (itemInstance == null) {
+			if (itemInstance === null) {
 				debugger;
-				unableToValidate = isCorrectType == true;
+				unableToValidate = true;
 			} else if (Array.isArray(itemInstance) && memberDocs.type == 'array') {
 				isCorrectType = true;
 			} else {
@@ -262,7 +279,9 @@ function showDependants(table, files) {
 	for(var i = 0, length = files.length; i < length; i++) {
 
 		tr = createRow(table, 'td', 1, columns.length);
+
 		var path = '/' + files[i];
+
 		var a = document.createElement('a');
 		a.target = 'hostFrame';
 		a.href = path;
@@ -271,6 +290,62 @@ function showDependants(table, files) {
 
 	}
 
+}
+
+function showRelatedShots(ul, ul2, files) {
+	var a, li;
+	var path;
+	var namePart;
+	var fileName;
+		
+	for (var i = 0, length = files.length; i < length; i++) {
+
+		fileName = files[i];
+		path = '/' + fileName;
+		namePart = fileName.match(nameMatch);
+
+		li = document.createElement('li');
+
+		a = document.createElement('a');
+		a.target = 'hostFrame';
+		a.href = path;
+		li.appendChild(a);
+
+		a.style.backgroundImage = 'url(generated/' + namePart[1] + '_80.jpg)';
+		a.className = 'example';
+		a.innerHTML = '';
+		a.title = namePart[1];
+
+		ul.appendChild(li);
+		ul2.appendChild(li.cloneNode(true));
+
+	}
+
+}
+
+function showRelatedScripts(div, files) {
+	var a, li;
+	var path;
+	var namePart;
+	var fileName;
+
+	files.sort();
+
+	for (var i = 0, length = files.length; i < length; i++) {
+
+		fileName = files[i];
+		path = '/' + fileName;
+		namePart = fileName.match(nameMatch);
+
+		a = document.createElement('a');
+		a.target = 'hostFrame';
+		a.href = path;
+		a.title = namePart[1];
+		a.innerHTML = namePart[1] + '.js';
+
+		div.appendChild(a);
+
+	}
 }
 
 // TODO: Word count would be a better quality metric
@@ -295,10 +370,11 @@ function inspectInstance(obj) {
 	};
 
 	for(var p in obj) {
-		if (obj.hasOwnProperty(p))
+		if (obj.hasOwnProperty(p)) {
 			members.local.push(p);
-		else
+		} else {
 			members.remote.push(p); // = typeof obj[p];
+		}
 	}
 
 	return members;

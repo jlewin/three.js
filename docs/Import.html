@@ -1,8 +1,37 @@
-﻿<html>
+﻿<!doctype html>
+<html>
 	<head>
+		<title>Import</title>
 		<style type="text/css">
+	  /* Webkit micro scrollbars */
+
+	::-webkit-scrollbar {
+		width:9px;
+	}
+
+	::-webkit-scrollbar-track {
+		-webkit-border-radius:5px;
+		border-radius:5px;
+		background: rgba(140,140,140,0.1);
+	}
+	::-webkit-scrollbar-thumb {
+		-webkit-border-radius:5px;
+		border-radius:5px;
+		background: rgba(140,140,140,0.5);
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(140,140,140,0.4);
+	}
+
+	::-webkit-scrollbar-thumb:window-inactive {
+		background: rgba(140,140,140,0.5);
+	}
+
+
 			body {
 				font-family: sans-serif;
+				margin: 0;
 			}
 			#allTypes {
 				margin: 0;
@@ -25,7 +54,7 @@
 				width: 400px;
 				height: 590px;
 				float: right;
-				background: #ccc;
+				background: #bbb;
 				border: solid 1px #ddd;
 				padding: 5px;
 				overflow: scroll;
@@ -59,6 +88,85 @@
 					background-position: 0 -16px;
 				}
 
+				#links {
+
+					height: 59px;
+					background: #bbb;
+					overflow: hidden;
+				}
+
+				.exampleView {
+					margin: 0;
+					padding: 0;
+					overflow: auto;
+				}
+
+				.exampleView li {
+
+					margin: 6px;
+					list-style: none;
+					float: left;
+				}
+
+				.exampleView a.example {
+					/* width: 60px; height: 33px;
+					width: 150px; height: 83px;
+					width: 178px; height: 98px;  */
+
+					width: 80px; height: 44px;
+
+					border-radius: 3px 4px;
+					box-shadow: 1px 1px 3px #888;
+					display: block;
+					cursor: pointer;
+					background: url(blank.png) no-repeat;
+				}
+
+			#scripts {
+				clear: left;
+				background: #969696;
+				margin: 25px 10px;
+				padding: 10px 0 5px 11px;
+				border-radius: 3px;
+				position: relative;
+			}
+
+				#scripts li {
+					margin: 0 3px 0 0;
+				}
+
+				/*#scripts li:first-child {
+					margin-left: 10px;
+				}*/
+
+				#scripts a {
+					padding: 3px 3px 3px 8px;
+					background: #AAA;
+					border-left: solid 1px #E0AE0B;
+					border-radius: 2px;
+					color: #444;
+					margin-right: 8px;
+					font-size: 0.7em;
+					width: 108px;
+					text-decoration: none;
+					line-height: 12px;
+					display: inline-block;
+					box-sizing: border-box;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+
+				#scripts a:hover {
+					color: #000;
+					border-color: #F4CE0B;
+				}
+
+				#scripts img {
+					position: absolute;
+					margin-top: -25px;
+					margin-left: -20px;
+				}
+
 		</style>
 	</head>
 	<body>
@@ -67,7 +175,7 @@
 		<!-- TypeLoader dependencies -->
 		<script src="../examples/fonts/helvetiker_regular.typeface.js"></script>
 		<script src="../examples/js/loaders/ColladaLoader.js"></script>
-		
+
 		<script src="list.js"></script>
 
 		<script src="HelpDocParser.js"></script>
@@ -76,9 +184,29 @@
 
 		<script id="dyn"></script>
 
+		<div id="links" >
+
+			<ul id="shots1" class="exampleView"></ul>
+
+		</div>
+
 		<iframe id="hostFrame" name="hostFrame" style="width: 100%; height: 600px;"></iframe>
 
-		<div id="results"></div>
+		<div id="results">
+
+			<div id="scripts">
+
+				<img src="js40.png" alt="Javascript" />
+
+				<div></div>
+
+			</div>
+
+			<ul id="shots2" class="exampleView"></ul>
+
+
+			<table></table>
+		</div>
 
 		<ul id="allTypes"></ul>
 
@@ -88,10 +216,19 @@
 			var types = [];
 			var helpDocs = {};
 			var errors = [];
-			var hostFrame = document.getElementById('hostFrame');
 
-			var ul = document.getElementById('allTypes');
-			ul.addEventListener('click', showClickedItem, false);
+			var el = {
+
+				frame: document.getElementById('hostFrame'),
+				results: document.getElementById('results'),
+				shots1: document.getElementById('shots1'),
+				shots2: document.getElementById('shots2'),
+				scriptList: document.querySelector('#scripts div'),
+				types: document.getElementById('allTypes')
+
+			}
+
+			el.types.addEventListener('click', showClickedItem, false);
 
 			loadDocuments();
 
@@ -127,7 +264,6 @@
 
 				if (typeA != typeB) return false;
 
-				
 				switch (typeA) {
 					case 'object':
 						if (Array.isArray(dis)) {
@@ -142,35 +278,84 @@
 				}
 			}
 
+			function emptyElement() {
+
+				for (var e in arguments) {
+
+					while (e.lastChild)
+						e.removeChild(e.lastChild);
+
+				}
+
+			}
+
 			function showClickedItem(e) {
 
 				// Display the help docs
-				hostFrame.src = e.srcElement.getAttribute('data-url');
+				el.frame.src = e.srcElement.getAttribute('data-url');
 
 				var className = e.srcElement.textContent;
 				var helpDoc = helpDocs[className];
 				var categorized;
 
-				var elem = document.getElementById('results');
-				elem.innerHTML = '';
+				function groupRelatedFilesByType(){
 
-				var tbl = document.createElement('table');
-				
-				var relatedFiles = tokenMap.tokenMap['THREE.' + className].map(function(i){ return tokenMap.files[i]});
-				showDependants(tbl, relatedFiles);
-				elem.appendChild(tbl);
+					var results = {
+						examples: [],
+						scripts: []
+					};
 
-				var instance = typeMap.getInstance(className);
+					// The tokenMap optimizes for storage space (it's fairly big and serialized to localStorage) and
+					// as such simply integer references to file paths rather than strings. To make use of the data,
+					// we remap by looking up in the files array as done below
+					var fileList = tokenMap.tokenMap['THREE.' + className].map(function(i){ return tokenMap.files[i]});
 
-				if (helpDoc.superName || helpDoc.protoName) {
-					// Compare the instance against its proto to decipher inheritance
-					categorized = compareTypes(instance, typeMap.getInstance(helpDoc.superName || helpDoc.protoName))
-				} else {
-					categorized = inspectInstance(instance);
+					for( var i = 0, length = fileList.length; i < length; i++ ) {
+
+						var file = fileList[i];
+
+						if (file.indexOf('.js') == -1) {
+
+							results.examples.push(file);
+
+						} else {
+
+							results.scripts.push(file);
+
+						}
+
+					}
+
+					return results;
+
 				}
 
-				var table = validateDocs(className, instance, helpDoc, categorized);
-				elem.appendChild(table);
+				var grouped = groupRelatedFilesByType();
+
+				emptyElement(el.shots1, el.shots2, el.scriptList);
+
+				showRelatedShots(el.shots1, el.shots2,  grouped.examples);
+				showRelatedScripts(el.scriptList, grouped.scripts);
+
+				try
+				{
+					var instance = typeMap.getInstance(className);
+
+					if (helpDoc.superName || helpDoc.protoName) {
+						// Compare the instance against its proto to decipher inheritance
+						categorized = compareTypes(instance, typeMap.getInstance(helpDoc.superName || helpDoc.protoName))
+					} else {
+						categorized = inspectInstance(instance);
+					}
+
+					var table = validateDocs(className, instance, helpDoc, categorized);
+					el.results.appendChild(table);
+
+				}
+				catch(e)
+				{
+					console.log('Unable to load type (' + className + '); ' + e);
+				}
 
 			}
 
@@ -180,7 +365,7 @@
 				var json = window.localStorage[storageKey];
 				if (!json) {
 
-					var docParser = new HelpDocParser(hostFrame,  list.Reference, function(collected2) {
+					var docParser = new HelpDocParser(el.frame,  list.Reference, function(collected2) {
 						window.localStorage[storageKey] = JSON.stringify(collected2);
 						typesLoaded(collected2);
 					});
@@ -202,9 +387,27 @@
 
 				allTypes.innerHTML = '';
 
+				var debug = true;
+				var loadErrors = [];
+
+				collected.sort( function(a,b) {
+					return a.className.localeCompare(b.className);
+				});
+
 				for (var i = 0, length = collected.length; i < length; i++) {
 
 					item = collected[i];
+
+					if(debug) {
+
+						try {
+							var instance = typeMap.getInstance(item.className);
+						}
+						catch(e) {
+							errors.push({name: item.className, error: e});
+						}
+
+					}
 
 					li = document.createElement('li');
 					li.innerHTML = item.helpClassName;
@@ -212,8 +415,8 @@
 					allTypes.appendChild(li);
 				}
 
-				hostFrame.style.width = 'calc(100% - 430px)';
-				hostFrame.onload = null;
+				el.frame.style.width = 'calc(100% - 430px)';
+				el.frame.onload = null;
 
 				helpDocs = {};
 

@@ -3,8 +3,8 @@ var nameTest = /\.([^\($\s]*)/;
 function HelpDocParser(iframe, references, finished) {
 	var that = this;
 	var imported = 0;
-	var MAX_IMPORT = 10;
-	var IMPORT_SKIP_COUNT = 40;
+	var MAX_IMPORT = 0;
+	var IMPORT_SKIP_COUNT = 0;
 
 	this.iframe = iframe;
 	this.xhr = new XMLHttpRequest();
@@ -85,7 +85,7 @@ function HelpDocParser(iframe, references, finished) {
 		var item = that.activeItem = that.types.pop();
 
 		// If below max, load the document in the iframe to start the import
-		if (item && imported < MAX_IMPORT) {
+		if (item && (imported < MAX_IMPORT || MAX_IMPORT <= 0)) {
 
 			hostFrame.src = item[1] + '.html';
 			imported++;
