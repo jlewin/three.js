@@ -340,7 +340,7 @@ function showRelatedScripts(div, files) {
 		a = document.createElement('a');
 		a.target = 'hostFrame';
 		a.href = path;
-		a.title = namePart[1];
+		a.title = path;
 		a.innerHTML = namePart[1] + '.js';
 
 		div.appendChild(a);
