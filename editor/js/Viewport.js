@@ -30,6 +30,8 @@ var Viewport = function ( editor ) {
 	camera.position.fromArray( editor.config.getKey( 'camera' ).position );
 	camera.lookAt( new THREE.Vector3().fromArray( editor.config.getKey( 'camera' ).target ) );
 
+	container.Camera = camera;
+
 	//
 
 	var selectionBox = new THREE.BoxHelper();
@@ -564,6 +566,10 @@ var Viewport = function ( editor ) {
 		//console.trace();
 
 	}
+
+
+	container.Controls = controls;
+
 
 	return container;
 
