@@ -5,7 +5,8 @@ var thumbs = require('threethumbs'),
     threejsInfo = require('examplefiles');
 
 // File list
-var fileList = flatten(threejsInfo.exampleFiles).slice(0, 10).map(function(name){ 
+//var fileList = flatten(threejsInfo.exampleFiles).slice(0, 10).map(function(name){ 
+var fileList = flatten(threejsInfo.exampleFiles).map(function(name){ 
     return [name, 80, 150, 1000]; //178
 });
 
@@ -40,7 +41,10 @@ thumbs.generate(fileList, function(err, results) {
         // Format the results for easier viewing in the console
         var output = {};
         results.forEach(function(result) {
-        
+
+            // Handle condition where expected file was not produced, has been deleted, etc
+            if (result == null) return;
+
             var name = result[0];
             
             // Extract or create object for image size
