@@ -1,4 +1,6 @@
-﻿var tab,
+﻿/* Copyright 2014 John Lewin lewin76@gmail.com */
+
+var tab,
 	activeItem,
 	baseUrl = 'http://localhost:8085/',
 	importedCount = 0,
@@ -61,6 +63,10 @@ function processNextItem() {
 	}
 
 	activeItem = exampleName;
+    
+    // We're currently using hardcoded logic that intimately knows the relationship between the example files and the target urls. In
+    // the future this should be adapted so we call a url supplied by the user, view config or similar that returns a list of urls 
+    // to process
 	chrome.tabs.update(tab.id, { url: baseUrl + 'examples/' + exampleName + '.html' }, function (loaded) {
 
 		tab = loaded;
@@ -83,9 +89,10 @@ function CaptureScreenShot() {
 		xhr.open("POST", "http://localhost:8000/", true);
 
 		//xhr.setRequestHeader('tjs-batch', id);
+        // Pass the name through to the node.js code so it knows how to name the posted data
 		xhr.setRequestHeader('tjs-name', activeItem);
 
-		// Finally hook up a handler to for the resopnse which displays the results in a new tab
+		// Finally hook up a handler to the response which displays the results in a new tab
 		xhr.addEventListener("load", function () {
 			
 			// Load next item
@@ -94,9 +101,8 @@ function CaptureScreenShot() {
 			
 		}, false);
 
-		// Execute the xhr
-		xhr.send(formData);
-		
+		// Execute the xhr, posting the image to the node.js receiver
+		xhr.send(formData)
 		
 	});
 

@@ -27,16 +27,12 @@ http.createServer(function (req, res) {
 
 			onFile(buffer, req.headers['tjs-name'], function () {
 
-
-
-
 					console.log('All parts written to disk');
 					res.writeHead(200, { 'Connection': 'close' });
 					res.end("That's all folks!");
 			});
 
 		});
-
 
 		busboy.once('end', function () {
 			console.log('Done parsing form!');
@@ -61,7 +57,6 @@ function onFile(data, filename, next) {
 	var file = [__dirname, '../../generated', filename.replace(re, '') + '.jpg'].join(path.sep);
 	console.log('Write to file: ' + file);
 
-	//var fstream = fs.createWriteStream(path.join(os.tmpDir(), path.basename(filename)));
 	var fstream = fs.createWriteStream(file);
 
 	fstream.once('close', function () {
@@ -71,27 +66,6 @@ function onFile(data, filename, next) {
 
 	console.log('(' + filename + ') start saving');
 
-	//fstream.write(data);
 	fstream.end(data);
-
 }
 
-/*
-
-function resize(filename, options) {
-
-  easyimg.resize({
-  	src: filename, dst:  'kitten-thumbnail.jpg',
-  	width: 500, height: 500,
-  	cropwidth: 128, cropheight: 128,
-  	x: 0, y: 0
-  },
-  function (err, image) {
-  	if (err) throw err;
-  	console.log('Resized and cropped: ' + image.width + ' x ' + image.height);
-  }
-);
-
-}
-
-*/
