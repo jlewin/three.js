@@ -199,10 +199,10 @@
 				var xhr = new XMLHttpRequest();
 				xhr.onload = function () {
 
-					var blob = new Blob([xhr.response], { type: 'text/html' });
+					var blob = new Blob([xhr.response], { type: 'application/octet-binary' });
 					blob.name = fileName;
 
-					// Register for notication when loaded
+					// Register for notification when loaded
 					editor.signals.objectAdded.add(stlObjectAdded);
 
 					// Load the file into the editor by passing the blob to loadFile method
@@ -210,9 +210,12 @@
 
 				};
 
-				xhr.open('GET', 'http://localhost:8085/editor/loader.aspx?stlFile=' + fileName, true);
-				xhr.responseType = "text/html";
-				xhr.send(null);
+				var url = 'http://localhost:8085/editor/loader.aspx?stlFile=' + fileName;
+
+				xhr.overrideMimeType('text/plain; charset=x-user-defined');
+				xhr.open( 'GET', url, true );
+				xhr.responseType = "arraybuffer";
+				xhr.send( null );
 
 			}
 
