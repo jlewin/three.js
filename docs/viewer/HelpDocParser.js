@@ -87,7 +87,7 @@ function HelpDocParser(iframe, references, finished) {
 		// If below max, load the document in the iframe to start the import
 		if (item && (imported < MAX_IMPORT || MAX_IMPORT <= 0)) {
 
-			hostFrame.src = item[1] + '.html';
+			that.iframe.src = '/docs/' + item[1] + '.html';
 			imported++;
 
 		} else {
