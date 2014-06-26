@@ -311,7 +311,7 @@ function showRelatedShots(ul, ul2, files) {
 		a.href = path;
 		li.appendChild(a);
 
-		a.style.backgroundImage = 'url(docs/generated/' + namePart[1] + '_80.jpg)';
+		a.style.backgroundImage = 'url(docs/viewer/generated/' + namePart[1] + '_80.jpg)';
 		a.className = 'example';
 		a.innerHTML = '';
 		a.title = namePart[1];
